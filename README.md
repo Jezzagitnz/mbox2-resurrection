@@ -60,6 +60,8 @@ Useful contributions could include:
 
 If you have relevant information, hardware, or experience, please get in touch through GitHub Issues or Discussions.
 
+Before submitting work, please read [Contributing](CONTRIBUTING.md). For security concerns, see [Security policy](SECURITY.md).
+
 Even small pieces of reliable information may help move the project forward.
 
 ## Project principles
