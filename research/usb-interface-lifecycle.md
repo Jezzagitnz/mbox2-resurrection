@@ -24,7 +24,7 @@ The method also resets state fields at offsets `+0x114`, `+0x118`, `+0x11c` and 
 
 ## Alternate-interface operation
 
-`SetAlternateInterface()` first releases an object held at `+0xc0), obtains the interface pointer at `+0x88`, then calls interface vtable slots at byte offsets `0x5d0`, `0x890` and `0x5d8`. The middle call receives the requested alternate-setting number; the first and final calls receive zero-valued arguments. The return value from the middle operation is preserved and returned.
+`SetAlternateInterface()` first releases an object held at `+0xc0`, obtains the interface pointer at `+0x88`, then calls interface vtable slots at byte offsets `0x5d0`, `0x890` and `0x5d8`. The middle call receives the requested alternate-setting number; the first and final calls receive zero-valued arguments. The return value from the middle operation is preserved and returned.
 
 The call sequence is structurally consistent with an interface access/open, alternate-setting change and close/release sequence. The exact method names for these virtual slots have **not** yet been established, so this interpretation remains provisional.
 
