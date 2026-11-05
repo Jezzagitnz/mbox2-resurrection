@@ -36,6 +36,7 @@ Findings are being documented as the research progresses, with confirmed facts d
 ### Research notes
 
 - [Mavericks driver research](research/mavericks-driver.md) — known-working driver components, symbols and disassembly findings.
+- [Driver architecture](research/driver-architecture.md) — an initial map of the original driver's components and unanswered relationships.
 - [Apple Silicon research](research/apple-silicon.md) — modern target system and current USB detection findings.
 - [Firmware handshake investigation](research/firmware-handshake.md) — identified handshake routines and unanswered questions.
 
