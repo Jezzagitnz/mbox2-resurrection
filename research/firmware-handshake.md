@@ -49,7 +49,7 @@ The disassembly of `MaudioShDrRayUsbDevice::initHardware()` at `0x4da4` shows th
 10. Calls a device virtual method at offset `0xa38` with argument `0`. Depending on its result, the code may call the same method with argument `6`, then invokes `FirmwareHandshake(false)`.
 11. On the successful path following the handshake, invokes another device virtual method at offset `0xa20`.
 
-The virtual method identities at offsets `0xa30`, `0xa38`, and `0xa20` have not yet been established. Their semantics should not be guessed from call position alone.
+The virtual method identities have now been resolved against the concrete `RayDevice` vtable. The Itanium ABI vtable address point is 16 bytes after the vtable symbol. For `RayDevice`, the symbol is at `0x272e0` and the address point is `0x272f0`; therefore the call at vtable byte offset `0xa38` targets `UsbRematchInterface(unsigned char)` at `0x51b2`, while offset `0xa20` targets the `RayDevice::CreateAudioEngines()` override at `0xc9ca`. The calls in `initHardware()` with arguments 0 and 6 are consequently interface-rematching attempts, followed by the firmware handshake and (on the successful path) audio-engine creation. The earlier `0xa30` call is a separate operation and remains to be identified.
 
 ## FirmwareHandshake: confirmed USB request
 
@@ -100,9 +100,9 @@ The exact underlying IOKit method names and the circumstances in which these hel
 
 ## Vtable investigation status
 
-The symbol table places the `MaudioShDrRayUsbDevice` vtable at `0x20ee0`, with its metaclass symbols immediately preceding it. A raw `otool -s __DATA __const` dump shows mostly zero-filled 64-bit slots and a small number of non-zero values, including apparent entries corresponding to addresses `0x4a9e`, `0x4a7c`, `0x4ab2` and `0x4c28`.
+The symbol table places the `MaudioShDrRayUsbDevice` vtable at `0x20ee0`; its Itanium ABI address point is `0x20ef0`. The base-class slot at `+0xa20` resolves to the stub `CreateAudioEngines()` at `0x547a`, while `+0xa38` resolves to `UsbRematchInterface()` at `0x51b2`.
 
-These values have not yet been reliably mapped to vtable slots or methods. The Mach-O relocation/initialisation representation and the class ABI layout must be understood before drawing conclusions from the dump. The vtable analysis is therefore explicitly unfinished.
+The concrete `RayDevice` vtable symbol is at `0x272e0`, with address point `0x272f0`. Its corresponding `+0xa20` slot points to `RayDevice::CreateAudioEngines()` at `0xc9ca`, overriding the base stub. Its `+0xa38` slot points to `UsbRematchInterface()` at `0x51b2`. This resolves the relevant virtual calls in `initHardware()` without relying on the base-class table alone.
 
 ## Comparison with Linux boot quirk
 
@@ -149,3 +149,17 @@ The legacy utility's green “locked” indicator must not currently be describe
 4. Examine each `DigiHandshake::Do` stage helper and its callers.
 5. Map the resulting operations to runtime behaviour on the known-working Mavericks reference system.
 6. Record the exact binary version and hash alongside any conclusions.
+
+
+## 6 November 2026 update — resolved device vtable calls
+
+The `RayDevice` vtable dump and symbol table establish the concrete targets of two calls made by `initHardware()`:
+
+| Virtual slot | `RayDevice` target | Meaning |
+|---|---:|---|
+| `+0xa38` | `0x51b2` | `UsbRematchInterface(unsigned char)` |
+| `+0xa20` | `0xc9ca` | `RayDevice::CreateAudioEngines()` |
+
+The Itanium ABI address point is 16 bytes after the vtable symbol. `RayDevice`'s vtable symbol is `0x272e0`, address point `0x272f0`; the two slots are therefore at `0x27d28` and `0x27d10`, respectively. The base class has a stub `CreateAudioEngines()` at `0x547a`, but the derived `RayDevice` overrides it at `0xc9ca`.
+
+This confirms that `initHardware()` attempts to rematch USB interface numbers 0 and 6 through the same virtual method, performs `FirmwareHandshake(false)` on the relevant path, and calls the concrete audio-engine creation override after successful setup. The earlier `+0xa30` virtual operation remains unidentified. Static disassembly does not yet prove the runtime outcome of either rematch.
