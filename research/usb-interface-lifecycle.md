@@ -83,3 +83,17 @@ The relocation dump previously examined ended at `0x38c00`, before these relevan
 - The complete relationship between interface rematching, firmware handshake, and audio-engine creation.
 
 These are static-analysis findings only. They do not establish that the same sequence succeeds on modern macOS or that audio streaming has started.
+
+
+## 6 November 2026 update — concrete device vtable resolution
+
+The `initHardware()` virtual calls have now been resolved against the derived `RayDevice` vtable rather than inferred from the base class. The vtable symbol is at `0x272e0`; accounting for the 16-byte Itanium ABI prefix gives address point `0x272f0`.
+
+| Device-object virtual slot | Target | Resolved method |
+|---|---:|---|
+| `+0xa38` | `0x51b2` | `MaudioShDrRayUsbDevice::UsbRematchInterface(unsigned char)` |
+| `+0xa20` | `0xc9ca` | `RayDevice::CreateAudioEngines()` |
+
+The startup path's calls with arguments 0 and 6 are therefore two requests to rematch USB interfaces, not calls to audio-engine creation. The later `+0xa20` call is the derived audio-engine creation method. The base-class vtable has a stub at the corresponding `+0xa20` slot (`0x547a`), which is why using only the base-class table would have produced the wrong conclusion.
+
+This is a static call-target resolution. Whether each rematch succeeds at runtime, and what interface 0 versus interface 6 represents on the physical device, remain open questions.
