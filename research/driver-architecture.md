@@ -102,3 +102,10 @@ The `RayDevice` vtable symbol is at `0x272e0`, with its Itanium ABI address poin
 ## 7 November 2026 update — stream alternate-setting selection
 
 Static analysis has identified `RayEngine::GetAlternateSetting()` at `0xc2d0` and the `kStreamInterface` / `kAltInfo` tables. The routine selects alternate setting 6 when AC-3 is enabled; otherwise it selects 2 when the clock-source byte is 1, or 3 for other values. The 12 alternate-setting records are 28 bytes each, with interface ID and alternate-setting number in the first two bytes. The exact record mappings and the semantic meaning of the clock-source and AC-3 inputs remain unresolved. See [Stream-interface and alternate-setting selection](stream-alternate-settings.md) for the evidence and limitations.
+
+
+## 11 November 2026 update — asynchronous input transport
+
+Static disassembly now maps the `MaudioShDrRayUsbInterfaceAsyncRead` input path: 200 frame-list entries, two low-latency isochronous descriptors per submission, a 400-descriptor ring, and 50 initial submissions. The completion callback consumes completed frames and requeues pending work. Input payload bytes are copied into a circular audio sample buffer with wrap-aware timestamp handling. A separate mode-`2` branch estimates sample rate from the completed bytes per frame and can call an external-rate update routine; the mode's meaning and any relationship to S/PDIF remain unresolved.
+
+See [Mbox 2 asynchronous input transport and sample-buffer path](async-input-audio-path.md) for method addresses, object offsets, evidence boundaries and next steps. These are static findings, not proof of successful hardware streaming.
