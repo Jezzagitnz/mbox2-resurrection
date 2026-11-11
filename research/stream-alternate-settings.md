@@ -68,3 +68,26 @@ These findings come from static symbol/disassembly analysis of the Mavericks x86
 Next, dump the complete `kStreamInterface` and `kAltInfo` data ranges with addresses, decode every 28-byte record, and trace each copied field to the code that opens/configures the USB interface and advertises stream formats. Keep clock-source values and AC-3 state as raw inputs until their setters, callers, and user-visible controls are identified.
 
 See also [Original driver architecture](driver-architecture.md), [Mavericks driver research](mavericks-driver.md), and [Mbox 2 USB interface lifecycle research](usb-interface-lifecycle.md).
+
+
+## 11 November 2026 update — interface enablement and preference bytes
+
+Further disassembly identifies `RayPrefData::IsInterfaceEnabled(unsigned char)` at `0xb2f2`. The method calls a boolean virtual predicate through the `RayPrefData` vtable slot at byte offset `0x48`, then applies this interface-ID rule:
+
+| Result of vtable predicate | Interface IDs accepted by `IsInterfaceEnabled()` |
+|---|---|
+| True | Only interface ID `3` |
+| False | IDs `2`, `4` and `5` (bit mask `0x34`, with IDs above `5` rejected) |
+
+This is a confirmed rule in the helper's control flow. The complete four-entry `kStreamInterface` table has not yet been decoded in the saved evidence, so the table's exact contents should not be inferred from this predicate alone.
+
+Two named preference helpers expose adjacent bytes in the preference-data object:
+
+- `RayPrefData::GetClockSource()` at `0xb332` reads byte `0` from the preference-data pointer stored at `RayPrefData + 0x10`.
+- `RayPrefData::IsOutputAc3()` at `0xb370` reads byte `1` from that same pointer and returns whether it is nonzero.
+
+This confirms that the first two preference bytes are read separately as the clock-source value and an output-AC-3 flag by these named helpers. It does not establish the complete structure size or all possible values.
+
+**Important vtable qualification:** `RayEngine::GetAlternateSetting()` at `0xc2d0` and `RayPrefData::IsInterfaceEnabled()` at `0xb2f2` both call vtable slot `+0x48`. The 11 November captures identify the named `IsOutputAc3()` helper and its byte read, but do not include the relocation that proves slot `+0x48` resolves to that helper. The earlier AC-3 interpretation of the true branch therefore remains a working interpretation until the `RayPrefData` vtable entry is mapped.
+
+The new [asynchronous input transport and sample-buffer research](async-input-audio-path.md) records the separate low-latency input-frame queue and sample-rate tracking path. These static findings do not establish that any alternate setting is accepted at runtime or that the corresponding interface streams audio.
