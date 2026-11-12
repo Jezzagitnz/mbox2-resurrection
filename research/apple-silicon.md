@@ -53,3 +53,14 @@ The presence of Apple USB audio components in logs should not be treated as proo
 ## Next investigation
 
 Compare the USB descriptors and interface layout on the Mavericks reference system and the Apple Silicon target. Then determine which component claims each interface and whether the original device-specific initialisation sequence has taken place.
+
+
+## 12 November 2026 — modern macOS USB audio observations
+
+A separate read-only test on a work Mac running a current macOS release reproduced the modern-Mac detection problem. The exact work-Mac model and OS build were not recorded, so these results are documented separately from the M1 Pro target-system inventory above.
+
+The USB host reported the expected Digidesign identity (`0x0dba:0x3000`), device revision `0x0138`, USB 1.1, configuration 1 active and a 500 mA power allocation. Instantiated USB interface objects included Audio Control interface 1 and Audio Streaming interfaces 2–5, with `usbaudiod` client objects attached. The current interface objects all showed alternate setting 0; this query did not provide the complete descriptor set or prove that other alternate settings are absent.
+
+At the user-facing audio layer, Audio MIDI Setup listed Mbox 2 but reported “no valid formats available”; System Settings > Sound did not offer it as an input or output. System Profiler listed it as a USB audio device and showed 48,000 Hz, but no input/output channel counts. Treat that rate as a reported property, not proof of an operational 48 kHz stream. No matching `AppleUSBAudioEngine` object was found in the queried registry view. A 15-minute `usbaudiod` log filter showed only a routine CoreAnalytics update and no Mbox-specific diagnostic message.
+
+These observations establish detection without usable user-facing audio formats; they do not identify the failed initialisation stage or prove that the legacy firmware handshake failed. See [Modern macOS USB audio observations (12 November 2026)](modern-macos-usb-audio-observations-2026-11-12.md) for the interface listing, exact evidence limits and reproduction notes.
