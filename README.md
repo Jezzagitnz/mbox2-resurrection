@@ -39,6 +39,7 @@ Findings are being documented as the research progresses, with confirmed facts d
 - [Driver architecture](research/driver-architecture.md) — an initial map of the original driver's components and unanswered relationships.
 - [Apple Silicon research](research/apple-silicon.md) — modern target system and current USB detection findings.
 - [Firmware handshake investigation](research/firmware-handshake.md) — identified handshake routines and unanswered questions.
+- [Modern DriverKit architecture](research/driverkit-architecture.md) — public USBDriverKit and AudioDriverKit feasibility findings, Linux USB topology, and initialisation/control-request research.
 
 ### Hardware notes
 
