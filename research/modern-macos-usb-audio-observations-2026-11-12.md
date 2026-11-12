@@ -1,7 +1,7 @@
 # Modern macOS Mbox 2 USB and Core Audio observations
 
 **Observation date:** 12 November 2026  
-**Test environment:** Work Mac running a current macOS release (Tahoe); exact Mac model and OS build were not recorded in this session  
+**Test environment:** Work MacBook Pro, 16-inch model, Apple M1 Max, 32 GB RAM, running a current macOS release (Tahoe); exact macOS version and build were not recorded in this session  
 **Device:** Original full-size Digidesign Mbox 2  
 **Evidence type:** Read-only IORegistry, System Information, Audio MIDI Setup, System Settings and Unified Log inspection
 
@@ -73,7 +73,7 @@ No Mbox-specific error or stream-configuration message appeared in that filtered
 
 - The modern USB host detects the expected Digidesign VID/PID.
 - The device has configuration 1 active and appears as an audio device in system inventory.
-- Apple’s `usbaudiod` service has client objects attached to the Audio Control and Audio Streaming interface objects.
+- Apple's `usbaudiod` service has client objects attached to the Audio Control and Audio Streaming interface objects.
 - The user-facing audio stack does not expose usable formats or input/output channels in this test.
 
 **Not established:**
@@ -102,4 +102,4 @@ The inspection was read-only. The principal queries used included:
 - `system_profiler SPAudioDataType -detailLevel full` for the system audio inventory.
 - `log show --last 15m --style compact --predicate 'process == "usbaudiod"'` for recent USB-audio service messages.
 
-The original command output was captured in the 12 November 2026 investigation conversation. Exact OS build and work-Mac model were not recorded; do not merge this observation into the M1 Pro target-system inventory as though it were collected on that machine.
+The original command output was captured in the 12 November 2026 investigation conversation. The work Mac's model and memory capacity have now been confirmed as a 16-inch MacBook Pro with M1 Max and 32 GB RAM. The exact macOS version and build were not recorded. Keep these observations separate from the M1 Pro target-system inventory.
