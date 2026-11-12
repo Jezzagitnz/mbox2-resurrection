@@ -57,7 +57,7 @@ Compare the USB descriptors and interface layout on the Mavericks reference syst
 
 ## 12 November 2026 — modern macOS USB audio observations
 
-A separate read-only test on a work Mac running a current macOS release reproduced the modern-Mac detection problem. The exact work-Mac model and OS build were not recorded, so these results are documented separately from the M1 Pro target-system inventory above.
+A separate read-only test was performed on the user's work MacBook Pro, a 16-inch model with Apple M1 Max and 32 GB RAM, running a current macOS release (Tahoe). The exact macOS version and build were not recorded. These results are documented separately from the M1 Pro target-system inventory above.
 
 The USB host reported the expected Digidesign identity (`0x0dba:0x3000`), device revision `0x0138`, USB 1.1, configuration 1 active and a 500 mA power allocation. Instantiated USB interface objects included Audio Control interface 1 and Audio Streaming interfaces 2–5, with `usbaudiod` client objects attached. The current interface objects all showed alternate setting 0; this query did not provide the complete descriptor set or prove that other alternate settings are absent.
 
