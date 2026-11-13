@@ -109,3 +109,14 @@ Static analysis has identified `RayEngine::GetAlternateSetting()` at `0xc2d0` an
 Static disassembly now maps the `MaudioShDrRayUsbInterfaceAsyncRead` input path: 200 frame-list entries, two low-latency isochronous descriptors per submission, a 400-descriptor ring, and 50 initial submissions. The completion callback consumes completed frames and requeues pending work. Input payload bytes are copied into a circular audio sample buffer with wrap-aware timestamp handling. A separate mode-`2` branch estimates sample rate from the completed bytes per frame and can call an external-rate update routine; the mode's meaning and any relationship to S/PDIF remain unresolved.
 
 See [Mbox 2 asynchronous input transport and sample-buffer path](async-input-audio-path.md) for method addresses, object offsets, evidence boundaries and next steps. These are static findings, not proof of successful hardware streaming.
+
+
+## 13 November 2026 update — sample-rate and clock-control paths
+
+Static disassembly now traces the sample-rate path from engine-level reconfiguration into the USB-interface methods. The driver's explicit valid-rate table contains 44.1 and 48 kHz; the broader 8–48 kHz preference bounds are not a discrete supported-rate list. The interface methods construct three-byte USB control requests matching USB Audio Class endpoint sampling-frequency SET_CUR and GET_CUR conventions. The exact Apple USB virtual method behind the indirect call remains unresolved.
+
+The external-rate path is also mapped across the engine, active streams, asynchronous/adaptive services and interface state. This confirms a distinct feedback/frame-list mechanism for tracking an incoming rate, but the controller enum, feedback units and relationship to physical S/PDIF lock remain open.
+
+The same investigation further connects the four stream-interface entries (2–5), alternate-setting selection and the two-byte clock/AC-3 preference structure. AC-3 changes stream topology and format behaviour; it is not merely a bit-depth toggle.
+
+See [Sample-rate, clock and USB stream control](sample-rate-clock-control.md) for method addresses, request fields, evidence levels and the next investigation steps. These remain static findings and do not demonstrate working audio on modern macOS.
