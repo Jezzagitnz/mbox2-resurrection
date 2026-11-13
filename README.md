@@ -40,6 +40,7 @@ Findings are being documented as the research progresses, with confirmed facts d
 - [Apple Silicon research](research/apple-silicon.md) — modern target system and current USB detection findings.
 - [Modern macOS USB audio observations](research/modern-macos-usb-audio-observations-2026-11-12.md) — 12 November 2026 read-only interface, Core Audio and system-log findings.
 - [Firmware handshake investigation](research/firmware-handshake.md) — identified handshake routines and unanswered questions.
+- [Sample-rate, clock and USB stream control](research/sample-rate-clock-control.md) — 44.1/48 kHz selection, USB endpoint requests, external-rate tracking, alternate settings and AC-3 topology.
 - [Modern DriverKit architecture](research/driverkit-architecture.md) — public USBDriverKit and AudioDriverKit feasibility findings, Linux USB topology, and initialisation/control-request research.
 
 ### Hardware notes
