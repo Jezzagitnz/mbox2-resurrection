@@ -14,11 +14,21 @@ Use these labels consistently in project notes:
 
 ## Current development status — November 2026
 
-**Implementation preparation is under way.** The project has moved from architecture planning toward the first DriverKit implementation milestone. The development environment has been checked for Apple's DriverKit SDK and native DriverKit project template.
+**The first DriverKit project scaffold has been authored locally; build validation is pending.** The scaffold contains a DriverKit extension target, a minimal `IOService` start implementation, USB matching metadata for the original full-size Mbox 2 (VID `0x0dba`, PID `0x3000`), and a small host-app target.
 
-The next implementation milestone is a minimal DriverKit extension that can match the original full-size Mbox 2 (USB VID `0x0dba`, PID `0x3000`) and establish a device connection. Firmware initialisation will follow once device matching and the relevant DriverKit access requirements are established.
+The Xcode project file was assembled from the available DriverKit project structure. Its first project-discovery attempt failed because the two native targets referenced build-configuration objects where Xcode requires configuration-list objects. Xcode terminated during `xcodebuild -list`. The references have been identified for correction, but that correction and the subsequent Xcode test have not yet been run.
 
-**No DriverKit extension source has been created yet.** The project has not yet produced a driver build, loaded extension, successful device claim, firmware handshake, or hardware audio test. SDK and template availability do not prove that the required entitlements, device ownership or runtime behaviour will work.
+**This is not yet a successful DriverKit project or build.** The local scaffold has not yet passed project discovery, compiled, packaged the extension into its host app, been signed or loaded, or claimed the Mbox 2. The scaffold has not yet been committed as driver source in the public repository.
+
+The next work is deliberately incremental:
+
+1. Correct the Driver and Host target configuration-list references and confirm that Xcode can enumerate both targets.
+2. Build the minimal DriverKit target and resolve any native IIG, header, framework or build-setting issues reported by Xcode.
+3. Add the proper host-app dependency and system-extension embedding/activation flow.
+4. Establish the required signing, provisioning and DriverKit entitlement path before attempting activation.
+5. Only then, when the hardware is available, test USB matching, device ownership and the device-specific protocol.
+
+SDK and template availability do not prove that the required entitlements, device ownership or runtime behaviour will work. The USB match and service-start code are only the first scaffold; they do not implement firmware initialisation or audio.
 
 ## Stage 1 — Organise the evidence
 
