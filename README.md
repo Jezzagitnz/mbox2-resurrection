@@ -2,7 +2,7 @@
 
 **An open-source effort to bring the original Digidesign mBox 2 USB audio interface back to life on modern macOS.**
 
-**Project status: Research and early implementation preparation.**
+**Project status: Early DriverKit project scaffolding; build validation pending.**
 
 ## About the project
 
@@ -20,13 +20,15 @@ Other products in the mBox family — including the mBox 2 Mini and mBox 2 Pro �
 
 ## Current status
 
-The project has completed substantial investigation of the original driver, USB identification, firmware initialisation and the proposed modern macOS architecture. Work is now moving toward the first DriverKit implementation milestone.
+The project has completed substantial investigation of the original driver, USB identification, firmware initialisation and the proposed modern macOS architecture. Work has now started on the first DriverKit project scaffold.
 
-The initial implementation target is a minimal DriverKit extension that matches the original full-size Mbox 2 by USB vendor and product ID and establishes a device connection. Device-specific firmware initialisation and audio transport will be developed in subsequent steps.
+The initial local scaffold contains a DriverKit extension target with a minimal service-start implementation, USB matching metadata for the original full-size Mbox 2 (VID `0x0dba`, PID `0x3000`), and a small host-app target. This is an early project skeleton, not a completed or validated driver. The scaffold is still local development work and has not yet been published as driver source in this repository.
 
-**There is not yet a working modern macOS driver.** No DriverKit extension has yet been built or loaded, and device claiming, firmware initialisation and audio input/output have not been validated by the new implementation.
+**Build validation is currently pending.** The first Xcode project-discovery attempt exposed incorrect target build-configuration-list references in the hand-authored project file and caused Xcode to terminate. Those project metadata references are the next item to correct and verify. A successful project listing, driver build, extension packaging, signing, loading or device claim has not yet been demonstrated.
 
-Findings are being documented as the research progresses, with confirmed facts distinguished from hypotheses and areas still requiring investigation.
+**There is not yet a working modern macOS driver.** Firmware initialisation, device ownership, audio transport, Core Audio publication, and real audio input/output remain unimplemented or unvalidated. DriverKit entitlement availability and the ability to claim the Mbox 2 interfaces also remain open feasibility questions.
+
+See [the current DriverKit scaffold status](docs/driverkit-scaffold-status.md) and the [development roadmap](docs/development-roadmap.md) for the next steps. Findings continue to distinguish confirmed facts from hypotheses and work that has not yet been tested.
 
 ## Project documentation
 
@@ -34,6 +36,7 @@ Findings are being documented as the research progresses, with confirmed facts d
 
 - [Project goals](docs/project-goals.md) — intended hardware, functional aims and development principles.
 - [Development roadmap](docs/development-roadmap.md) — staged investigation and development plan.
+- [DriverKit scaffold status](docs/driverkit-scaffold-status.md) — current implementation checkpoint, build blocker and immediate next steps.
 
 ### Research notes
 
