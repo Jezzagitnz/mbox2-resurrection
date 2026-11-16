@@ -14,16 +14,18 @@ Use these labels consistently in project notes:
 
 ## Current development status — November 2026
 
-**The first DriverKit project scaffold has been authored locally; build validation is pending.** The scaffold contains a DriverKit extension target, a minimal `IOService` start implementation, USB matching metadata for the original full-size Mbox 2 (VID `0x0dba`, PID `0x3000`), and a small host-app target.
+**The first DriverKit project scaffold has been authored locally. Xcode project discovery is now confirmed, and standalone IIG generation has been demonstrated; the complete native build is still pending.** The scaffold contains a DriverKit extension target, a minimal `IOService` start implementation, USB matching metadata for the original full-size Mbox 2 (VID `0x0dba`, PID `0x3000`), and a small host-app target.
 
-The Xcode project file was assembled from the available DriverKit project structure. Its first project-discovery attempt failed because the two native targets referenced build-configuration objects where Xcode requires configuration-list objects. Xcode terminated during `xcodebuild -list`. The references have been identified for correction, but that correction and the subsequent Xcode test have not yet been run.
+The target configuration-list references in the hand-authored Xcode project have been corrected. `xcodebuild -list` now recognises both `Mbox2Driver` and `Mbox2DriverHost` and their Debug/Release configurations.
 
-**This is not yet a successful DriverKit project or build.** The local scaffold has not yet passed project discovery, compiled, packaged the extension into its host app, been signed or loaded, or claimed the Mbox 2. The scaffold has not yet been committed as driver source in the public repository.
+The first native DriverKit build reached C++ compilation but stopped because the generated `Mbox2Driver.h` was not available. A standalone run of Apple's IIG compiler has since succeeded when invoked with `-D__IIG=1`, producing the generated class header and dispatch implementation. Automatic IIG generation and generated-source compilation are the current integration task; a successful full build has not yet been demonstrated.
+
+**This is not yet a working DriverKit implementation.** The local scaffold has not completed a native build, been packaged into its host app, signed or loaded, or claimed the Mbox 2. The scaffold has not yet been committed as driver source in the public repository.
 
 The next work is deliberately incremental:
 
-1. Correct the Driver and Host target configuration-list references and confirm that Xcode can enumerate both targets.
-2. Build the minimal DriverKit target and resolve any native IIG, header, framework or build-setting issues reported by Xcode.
+1. Integrate the confirmed IIG compiler invocation into the Xcode build.
+2. Complete a native DriverKit build and resolve any remaining compiler, framework or build-setting issues.
 3. Add the proper host-app dependency and system-extension embedding/activation flow.
 4. Establish the required signing, provisioning and DriverKit entitlement path before attempting activation.
 5. Only then, when the hardware is available, test USB matching, device ownership and the device-specific protocol.
