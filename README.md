@@ -2,7 +2,7 @@
 
 **An open-source effort to bring the original Digidesign mBox 2 USB audio interface back to life on modern macOS.**
 
-**Project status: Early DriverKit project scaffolding; build validation pending.**
+**Project status: DriverKit scaffold underway; Xcode project discovery and standalone IIG generation confirmed, full build pending.**
 
 ## About the project
 
@@ -24,7 +24,7 @@ The project has completed substantial investigation of the original driver, USB 
 
 The initial local scaffold contains a DriverKit extension target with a minimal service-start implementation, USB matching metadata for the original full-size Mbox 2 (VID `0x0dba`, PID `0x3000`), and a small host-app target. This is an early project skeleton, not a completed or validated driver. The scaffold is still local development work and has not yet been published as driver source in this repository.
 
-**Build validation is currently pending.** The first Xcode project-discovery attempt exposed incorrect target build-configuration-list references in the hand-authored project file and caused Xcode to terminate. Those project metadata references are the next item to correct and verify. A successful project listing, driver build, extension packaging, signing, loading or device claim has not yet been demonstrated.
+**Xcode project discovery is now confirmed:** `xcodebuild -list` recognises both the DriverKit target and its macOS host-app target. A standalone run of Apple's IIG compiler has also successfully generated the driver interface header and dispatch implementation using the required `-D__IIG=1` define. The first native build exposed the next issue: automatic IIG generation and generated-source compilation still need to be integrated into the Xcode build. A successful full driver build has not yet been demonstrated.
 
 **There is not yet a working modern macOS driver.** Firmware initialisation, device ownership, audio transport, Core Audio publication, and real audio input/output remain unimplemented or unvalidated. DriverKit entitlement availability and the ability to claim the Mbox 2 interfaces also remain open feasibility questions.
 
