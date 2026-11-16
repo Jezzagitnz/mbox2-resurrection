@@ -12,25 +12,28 @@ Use these labels consistently in project notes:
 - **Open question** — not yet answered by available evidence.
 - **Not tested** — no test has yet been performed.
 
-## Current development status — November 2026
+## Current development status — 17 November 2026
 
-**The first DriverKit project scaffold has been authored locally. Xcode project discovery is now confirmed, and standalone IIG generation has been demonstrated; the complete native build is still pending.** The scaffold contains a DriverKit extension target, a minimal `IOService` start implementation, USB matching metadata for the original full-size Mbox 2 (VID `0x0dba`, PID `0x3000`), and a small host-app target.
+**The initial DriverKit extension and host-app scaffold now builds and packages successfully.** The Xcode project contains a minimal `IOService`-based DriverKit extension, USB matching metadata for the original full-size Mbox 2 (VID `0x0dba`, PID `0x3000`), an IIG generation build phase, and a macOS host app that embeds the extension under `Contents/Library/SystemExtensions`.
 
-The target configuration-list references in the hand-authored Xcode project have been corrected. `xcodebuild -list` now recognises both `Mbox2Driver` and `Mbox2DriverHost` and their Debug/Release configurations.
+The packaged extension has a valid root `Info.plist`, a declared executable name and an arm64 Mach-O binary. This confirms build and packaging only; it does not establish signing, activation, device ownership or audio operation.
 
-The first native DriverKit build reached C++ compilation but stopped because the generated `Mbox2Driver.h` was not available. A standalone run of Apple's IIG compiler has since succeeded when invoked with `-D__IIG=1`, producing the generated class header and dispatch implementation. Automatic IIG generation and generated-source compilation are the current integration task; a successful full build has not yet been demonstrated.
+The active DriverKit 27.2 SDK contains both USBDriverKit and AudioDriverKit. Header inspection confirmed the presence of `IOUserAudioDriver`, `IOUserAudioDevice`, `IOUserAudioStream`, and USB host device/interface/pipe APIs.
 
-**This is not yet a working DriverKit implementation.** The local scaffold has not completed a native build, been packaged into its host app, signed or loaded, or claimed the Mbox 2. The scaffold has not yet been committed as driver source in the public repository.
+**The key open architecture question is USB audio support.** Apple's general DriverKit documentation contains a restriction concerning USB devices that manipulate audio, while AudioDriverKit documentation and its sample describe hardware audio drivers communicating over USB or PCI. The precise supported architecture and entitlement path for this Mbox 2 use case must be established before implementation proceeds.
+
+The scaffold has not been signed, activated or loaded. It has not claimed the Mbox 2, performed the firmware handshake, implemented USB audio transfers, or published an AudioDriverKit device to Core Audio.
 
 The next work is deliberately incremental:
 
-1. Integrate the confirmed IIG compiler invocation into the Xcode build.
-2. Complete a native DriverKit build and resolve any remaining compiler, framework or build-setting issues.
-3. Add the proper host-app dependency and system-extension embedding/activation flow.
-4. Establish the required signing, provisioning and DriverKit entitlement path before attempting activation.
-5. Only then, when the hardware is available, test USB matching, device ownership and the device-specific protocol.
+1. Reconcile Apple's USB-audio restriction with the AudioDriverKit hardware-communication model and current USB transport APIs.
+2. Study the AudioDriverKit sample and relevant SDK declarations to establish a supported driver structure.
+3. Design a minimal AudioDriverKit driver/device skeleton and build it independently of unverified USB behaviour.
+4. Establish the signing, provisioning and entitlement requirements before attempting activation.
+5. Implement and test device matching, firmware initialisation and USB transport when the hardware is available.
+6. Implement audio streams, clocking and Core Audio publication, then validate real capture and playback.
 
-SDK and template availability do not prove that the required entitlements, device ownership or runtime behaviour will work. The USB match and service-start code are only the first scaffold; they do not implement firmware initialisation or audio.
+SDK and template availability do not prove that the required entitlements, device ownership or runtime behaviour will work. A successful build or package is not proof of working audio.
 
 ## Stage 1 — Organise the evidence
 
@@ -60,6 +63,7 @@ SDK and template availability do not prove that the required entitlements, devic
 
 - Identify which parts of the old driver behaviour are essential.
 - Evaluate current macOS audio-driver approaches and their support for the target macOS release.
+- Resolve the documented USB-audio restrictions and required entitlements before choosing a transport architecture.
 - Separate device communication, audio transport and user-facing configuration where practical.
 - Design for Apple Silicon and maintainability across future macOS releases.
 - Document security, signing, installation and system-permission requirements before proposing installation steps.
