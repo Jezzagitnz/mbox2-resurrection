@@ -2,7 +2,7 @@
 
 **An open-source effort to bring the original Digidesign mBox 2 USB audio interface back to life on modern macOS.**
 
-**Project status: DriverKit scaffold underway; Xcode project discovery and standalone IIG generation confirmed, full build pending.**
+**Project status: Initial DriverKit extension and host-app build/packaging confirmed; AudioDriverKit/USBDriverKit architecture investigation underway.**
 
 ## About the project
 
@@ -20,13 +20,15 @@ Other products in the mBox family — including the mBox 2 Mini and mBox 2 Pro �
 
 ## Current status
 
-The project has completed substantial investigation of the original driver, USB identification, firmware initialisation and the proposed modern macOS architecture. Work has now started on the first DriverKit project scaffold.
+The local development working copy now contains a minimal DriverKit extension target, USB matching metadata for the original full-size Mbox 2 (VID `0x0dba`, PID `0x3000`), an Xcode build phase that generates the IIG interface files, and a macOS host app.
 
-The initial local scaffold contains a DriverKit extension target with a minimal service-start implementation, USB matching metadata for the original full-size Mbox 2 (VID `0x0dba`, PID `0x3000`), and a small host-app target. This is an early project skeleton, not a completed or validated driver. The scaffold is still local development work and has not yet been published as driver source in this repository.
+**The minimal DriverKit extension and host app build successfully.** The extension is embedded in the host app under `Contents/Library/SystemExtensions`. Its packaged Info.plist and arm64 executable have been checked. This is a build-and-packaging milestone only, not a working driver.
 
-**Xcode project discovery is now confirmed:** `xcodebuild -list` recognises both the DriverKit target and its macOS host-app target. A standalone run of Apple's IIG compiler has also successfully generated the driver interface header and dispatch implementation using the required `-D__IIG=1` define. The first native build exposed the next issue: automatic IIG generation and generated-source compilation still need to be integrated into the Xcode build. A successful full driver build has not yet been demonstrated.
+The active DriverKit 27.2 SDK contains both USBDriverKit and AudioDriverKit. The installed headers expose audio-driver, audio-device, audio-stream, USB-device, USB-interface and USB-pipe APIs.
 
-**There is not yet a working modern macOS driver.** Firmware initialisation, device ownership, audio transport, Core Audio publication, and real audio input/output remain unimplemented or unvalidated. DriverKit entitlement availability and the ability to claim the Mbox 2 interfaces also remain open feasibility questions.
+The next architectural question is how Apple's documented USB-audio restrictions apply to an AudioDriverKit hardware driver communicating with this particular USB audio interface. That must be resolved, along with the required entitlements, before committing to an implementation design.
+
+**There is not yet a working modern macOS driver.** The extension has not been signed, activated or loaded; it has not claimed the Mbox 2; and firmware initialisation, USB audio transport, AudioDriverKit publication, capture and playback remain unimplemented or unvalidated.
 
 See [the current DriverKit scaffold status](docs/driverkit-scaffold-status.md) and the [development roadmap](docs/development-roadmap.md) for the next steps. Findings continue to distinguish confirmed facts from hypotheses and work that has not yet been tested.
 
@@ -36,7 +38,7 @@ See [the current DriverKit scaffold status](docs/driverkit-scaffold-status.md) a
 
 - [Project goals](docs/project-goals.md) — intended hardware, functional aims and development principles.
 - [Development roadmap](docs/development-roadmap.md) — staged investigation and development plan.
-- [DriverKit scaffold status](docs/driverkit-scaffold-status.md) — current implementation checkpoint, build blocker and immediate next steps.
+- [DriverKit scaffold status](docs/driverkit-scaffold-status.md) — current implementation checkpoint, build/package evidence, architecture question and next steps.
 
 ### Research notes
 
