@@ -12,6 +12,14 @@ Use these labels consistently in project notes:
 - **Open question** — not yet answered by available evidence.
 - **Not tested** — no test has yet been performed.
 
+## Current development status — November 2026
+
+**Implementation preparation is under way.** The project has moved from architecture planning toward the first DriverKit implementation milestone. The development environment has been checked for Apple's DriverKit SDK and native DriverKit project template.
+
+The next implementation milestone is a minimal DriverKit extension that can match the original full-size Mbox 2 (USB VID `0x0dba`, PID `0x3000`) and establish a device connection. Firmware initialisation will follow once device matching and the relevant DriverKit access requirements are established.
+
+**No DriverKit extension source has been created yet.** The project has not yet produced a driver build, loaded extension, successful device claim, firmware handshake, or hardware audio test. SDK and template availability do not prove that the required entitlements, device ownership or runtime behaviour will work.
+
 ## Stage 1 — Organise the evidence
 
 - Record the known-working legacy system and its software versions.
