@@ -1,0 +1,13 @@
+# Xcode build products
+build/
+DerivedData/
+
+# Generated DriverKit intermediates
+Driver/Build/
+
+# Xcode user-specific files
+*.xcuserstate
+xcuserdata/
+
+# macOS metadata
+.DS_Store

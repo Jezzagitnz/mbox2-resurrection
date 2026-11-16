@@ -1,0 +1,20 @@
+#ifndef MBOX2DRIVER_H
+#define MBOX2DRIVER_H
+
+#include <Availability.h>
+#include <DriverKit/IOService.iig>
+
+class Mbox2Driver : public IOService
+{
+public:
+    virtual kern_return_t
+    Start(IOService * provider) override;
+
+    virtual void
+    Stop(IOService * provider) override;
+
+private:
+    IOService * _usbDevice;
+};
+
+#endif
