@@ -2,7 +2,7 @@
 
 **An open-source effort to bring the original Digidesign mBox 2 USB audio interface back to life on modern macOS.**
 
-**Project status: Research and early implementation. No working modern driver yet.**
+**Project status: Initial DriverKit extension and host-app build/packaging confirmed; AudioDriverKit/USBDriverKit architecture investigation underway.**
 
 ## About the project
 
@@ -49,6 +49,8 @@ A build or local experiment is not automatically safe to install. Signing, notar
 
 - [Project goals](docs/project-goals.md) — intended hardware, functional aims and non-negotiable development principles.
 - [Development roadmap](docs/development-roadmap.md) — current status, candidate architectures and staged development plan.
+- [DriverKit scaffold status](docs/driverkit-scaffold-status.md) — what was built and packaged, and what remains untested.
+- [DriverKit prototype preparation](docs/driverkit-prototype-preparation.md) — the entitlement, signing and safe-activation gates; no security reduction is permitted.
 
 ### Research notes
 
