@@ -24,6 +24,8 @@ The project is in **research and early implementation**, not yet at a working-dr
 - **Confirmed:** A transport-independent C++17 protocol module was built and its unit tests passed in a clean Linux container.
 - **Confirmed:** Modern macOS has existing `usbaudiod` clients attached to several Mbox 2 USB interfaces, creating an interface-ownership question for any replacement transport.
 
+For the detailed build/package evidence and explicit limitations, see [DriverKit scaffold status](driverkit-scaffold-status.md). The proposed secure activation gate is documented separately in [DriverKit prototype preparation](driverkit-prototype-preparation.md).
+
 ### Not demonstrated
 
 - DriverKit signing with the required entitlements, installation, activation or runtime loading.
