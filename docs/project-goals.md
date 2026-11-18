@@ -4,7 +4,7 @@
 
 Develop an open-source way to use the original, full-size Digidesign Mbox 2 USB audio interface on modern macOS, with Apple Silicon as the primary target.
 
-The initial development target is the user's Apple Silicon MacBook Pro with an M1 Pro processor. The intended modern macOS target is currently referred to in this project as **Golden Gate**. Universal Audio LUNA is the initial digital audio workstation (DAW) target for eventual practical use.
+The initial development target is an Apple Silicon MacBook Pro with an M1 Pro processor. The intended modern macOS target is currently referred to in this project as **Golden Gate**. Universal Audio LUNA is the initial digital audio workstation (DAW) target for eventual practical use.
 
 These are project goals, not claims that support has already been achieved.
 
@@ -12,7 +12,7 @@ These are project goals, not claims that support has already been achieved.
 
 The research and development work will investigate whether the modern solution can provide:
 
-- Audio input and output through CoreAudio.
+- Audio input and output through Core Audio.
 - 16-bit and 24-bit audio.
 - 44.1 kHz and 48 kHz sample rates, with 44.1 kHz prioritised for music work.
 - Internal clock operation.
@@ -29,9 +29,23 @@ The initial utility concept is Mbox 2-specific. Its design should remain modular
 
 ## Initial hardware scope
 
-The first target is the original full-size USB Digidesign Mbox 2.
+The first target is the original full-size USB Digidesign Mbox 2 (USB VID `0x0dba`, PID `0x3000`).
 
 The Mbox 2 Mini, Mbox 2 Pro, Mbox 2 Micro and other Mbox-family products are not assumed to share the same hardware, firmware or driver behaviour. They are outside the initial implementation scope unless evidence and community contributions justify expanding it.
+
+## Non-negotiable security requirements
+
+The primary development Mac must retain **System Integrity Protection (SIP) enabled and normal Startup Security**.
+
+The project must not require or recommend:
+- Disabling or reducing SIP.
+- Reduced Security or Recovery-mode security changes.
+- Kernel extensions or root-only USB access.
+- Forced USB device capture, device-seize fallbacks, or terminating Apple's existing USB audio clients to take ownership.
+
+Any USB access test must use ordinary, non-forcing access. If macOS denies access because an interface is already owned, the test stops. It must not escalate to capture or security reduction.
+
+Software signing, notarisation, permissions and installation risks must be assessed before asking users to install or run a build. A successful build does not imply that the result is safe or ready to install.
 
 ## Development principles
 
@@ -43,9 +57,10 @@ The Mbox 2 Mini, Mbox 2 Pro, Mbox 2 Micro and other Mbox-family products are not
 - Keep project-created driver and software code open source under GPL-3.0-only.
 - License original project documentation under CC BY 4.0.
 - Respect the original licences and permissions of all third-party material.
+- Keep the original full-size Mbox 2 as the sole initial hardware target.
 
 ## Current status
 
-The project is in the research and investigation stage. The original driver has been examined on a working Mavericks reference system, and the Mbox 2 has been detected by the USB system on Apple Silicon.
+The project has completed substantial reverse-engineering research and produced early, hardware-independent implementation foundations: a minimal DriverKit scaffold that compiled and packaged, and a transport-independent protocol module whose unit tests passed.
 
-A working modern macOS driver has **not** yet been produced. Successful firmware initialisation, CoreAudio operation and audio streaming on the modern target remain to be demonstrated.
+Neither foundation is a functioning driver. DriverKit signing, entitlement approval, activation, USB communication, firmware initialisation, Core Audio operation and audio streaming remain unproven on the modern target.
