@@ -14,11 +14,13 @@ Use these labels consistently in project notes:
 
 ## Current development status — November 2026
 
-**Implementation preparation is under way.** The project has moved from architecture planning toward the first DriverKit implementation milestone. The development environment has been checked for Apple's DriverKit SDK and native DriverKit project template.
+The project now has a minimal DriverKit source scaffold on the separate `driverkit-foundation` branch (PR #14). A local Xcode 27.2 build and packaging result are recorded there. This is a compile/package milestone only: signing, entitlement approval, activation, USB ownership, firmware initialisation and audio remain untested.
 
-The next implementation milestone is a minimal DriverKit extension that can match the original full-size Mbox 2 (USB VID `0x0dba`, PID `0x3000`) and establish a device connection. Firmware initialisation will follow once device matching and the relevant DriverKit access requirements are established.
+A second architecture is being investigated in parallel: an ordinary user-space IOUSBHost helper connected to a Core Audio Audio Server Plug-in. Apple's public APIs make this technically plausible without a DriverKit USB extension, but the Mbox 2's required interfaces were previously observed with `usbaudiod` clients attached. Normal IOUSBHost access is exclusive, so access without device capture is the first hard test.
 
-**No DriverKit extension source has been created yet.** The project has not yet produced a driver build, loaded extension, successful device claim, firmware handshake, or hardware audio test. SDK and template availability do not prove that the required entitlements, device ownership or runtime behaviour will work.
+**Security constraint:** SIP and Startup Security on the primary Mac must remain unchanged. Do not use kernel extensions, ad-hoc DriverKit activation that requires disabling security checks, root-only device capture, or `IOUSBHostObjectInitOptionsDeviceCapture`. If a test cannot proceed under normal security, stop and record the blocker.
+
+See [SIP-compatible user-space USB and Core Audio path](../research/sip-compatible-user-space-path.md) for the architecture comparison, API evidence and decision gates.
 
 ## Stage 1 — Organise the evidence
 
@@ -44,15 +46,21 @@ The next implementation milestone is a minimal DriverKit extension that can matc
 - Investigate internal clocking and external S/PDIF synchronisation.
 - Distinguish device communication, clock synchronisation and active audio streaming.
 
-## Stage 4 — Design a modern implementation
+## Stage 4 — Design and implement a modern transport
 
-- Identify which parts of the old driver behaviour are essential.
-- Evaluate current macOS audio-driver approaches and their support for the target macOS release.
-- Separate device communication, audio transport and user-facing configuration where practical.
-- Design for Apple Silicon and maintainability across future macOS releases.
-- Document security, signing, installation and system-permission requirements before proposing installation steps.
+Evaluate and keep separate the two viable candidates until evidence selects one:
 
-## Stage 5 — Validate audio operation
+1. **DriverKit + AudioDriverKit:** use the approved DriverKit/USB transport entitlements and normal signed activation path. Do not use Apple's SIP-disabling ad-hoc development workaround.
+2. **IOUSBHost + Audio Server Plug-in:** use a user-space USB helper and a plug-in/helper IPC boundary. Prove ordinary interface access without device capture or disrupting Apple's services before investing in the full audio path.
+
+In parallel:
+
+- Keep Mbox protocol logic independent of the USB transport.
+- Add automated tests for confirmed request construction, response parsing and state transitions.
+- Use a preallocated, bounded audio ring for any eventual real-time bridge.
+- Verify all API signatures and deployment requirements against the installed macOS 27 SDK before implementation.
+
+## Stage 5 — Validate device operation and audio
 
 - Establish repeatable device initialisation.
 - Test input and output independently.
@@ -60,6 +68,7 @@ The next implementation milestone is a minimal DriverKit extension that can matc
 - Test 44.1 kHz and 48 kHz operation where supported.
 - Test internal and external clock modes where supported.
 - Verify real audio capture and playback, not merely device detection.
+- Perform all tests with SIP and normal Startup Security enabled.
 
 ## Stage 6 — Build a configuration utility
 
