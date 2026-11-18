@@ -58,6 +58,7 @@ A build or local experiment is not automatically safe to install. Signing, notar
 - [Driver architecture](research/driver-architecture.md) — an initial map of the original driver's components and unanswered relationships.
 - [Apple Silicon research](research/apple-silicon.md) — modern target system and current USB detection findings.
 - [Modern macOS USB audio observations](research/modern-macos-usb-audio-observations-2026-11-12.md) — read-only interface, Core Audio and system-log findings.
+- [18 November hardware detection session](research/hardware-detection-session-2026-11-18.md) — application detection result, unchanged hardware indicators and pending USB-B to USB-C cable test.
 - [Firmware handshake investigation](research/firmware-handshake.md) — identified handshake routines and unanswered questions.
 - [Sample-rate, clock and USB stream control](research/sample-rate-clock-control.md) — 44.1/48 kHz selection, USB endpoint requests, external-rate tracking, alternate settings and AC-3 topology.
 - [Modern DriverKit architecture](research/driverkit-architecture.md) — USBDriverKit and AudioDriverKit feasibility findings, Linux USB topology, and initialisation/control-request research.
