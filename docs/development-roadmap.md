@@ -20,6 +20,8 @@ The next implementation milestone is a minimal DriverKit extension that can matc
 
 **No DriverKit extension source has been created yet.** The project has not yet produced a driver build, loaded extension, successful device claim, firmware handshake, or hardware audio test. SDK and template availability do not prove that the required entitlements, device ownership or runtime behaviour will work.
 
+The first milestone is now broken down in [DriverKit prototype preparation](driverkit-prototype-preparation.md). That plan deliberately separates source/build preparation from entitlement approval and physical-device activation, and does not assume SIP will be disabled.
+
 ## Stage 1 — Organise the evidence
 
 - Record the known-working legacy system and its software versions.
