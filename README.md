@@ -2,48 +2,63 @@
 
 **An open-source effort to bring the original Digidesign mBox 2 USB audio interface back to life on modern macOS.**
 
-**Project status: Research and early implementation preparation.**
+**Project status: Research and early implementation. No working modern driver yet.**
 
 ## About the project
 
 The original Digidesign mBox 2 was a USB audio interface designed for an earlier generation of Mac and Windows systems. Its original drivers are no longer suitable for modern macOS, leaving otherwise functional hardware difficult to use.
 
-This project aims to investigate the hardware and its communication protocols, understand the original driver architecture, and develop a modern macOS solution.
-
-The longer-term goal is to make the original mBox 2 useful again on Apple Silicon Macs.
+This project investigates the hardware and its communication protocols, studies the original driver architecture, and develops a modern macOS solution for Apple Silicon.
 
 ## Hardware scope
 
-The initial target is the **original full-size USB Digidesign mBox 2**.
+The initial target is the **original full-size USB Digidesign Mbox 2** (USB VID `0x0dba`, PID `0x3000`).
 
-Other products in the mBox family — including the mBox 2 Mini and mBox 2 Pro — use different hardware and are not assumed to be compatible. Research into those devices may be useful, but they are outside the initial hardware target.
+The Mbox 2 Mini, Mbox 2 Pro, Mbox 2 Micro and other family products are not assumed to share the same hardware or protocol. They are outside the initial implementation scope.
 
 ## Current status
 
-The project has completed substantial investigation of the original driver, USB identification, firmware initialisation and the proposed modern macOS architecture. Work is now moving toward the first DriverKit implementation milestone.
+The project has completed substantial investigation of the original Mavericks driver, USB identification, firmware initialisation, USB interface layout and audio-format control. Development has also produced two hardware-independent foundations:
 
-The initial implementation target is a minimal DriverKit extension that matches the original full-size Mbox 2 by USB vendor and product ID and establishes a device connection. Device-specific firmware initialisation and audio transport will be developed in subsequent steps.
+- A minimal DriverKit project scaffold that successfully compiled and packaged on Apple Silicon with Xcode 27.2.
+- A transport-independent C++17 protocol module with unit tests; the test suite passed in a clean Linux container.
 
-**There is not yet a working modern macOS driver.** No DriverKit extension has yet been built or loaded, and device claiming, firmware initialisation and audio input/output have not been validated by the new implementation.
+These milestones are **build and research results, not a functioning driver**. The DriverKit scaffold has not been signed with the required entitlements, installed, activated or tested against the Mbox 2. The protocol module does not communicate with USB hardware.
 
-Findings are being documented as the research progresses, with confirmed facts distinguished from hypotheses and areas still requiring investigation.
+The current architecture investigation is comparing a properly entitled DriverKit route with a user-space USB engine and Core Audio AudioServerPlugIn approach. A separate Apple Silicon audio-driver project demonstrates that a user-space design can be built without a kernel extension, but its use of USB device-seize fallback is a significant safety concern and is not accepted as a solution for this project.
+
+**No working modern macOS driver, firmware handshake, audio capture or audio playback has yet been demonstrated.**
+
+## Security and system-integrity requirements
+
+The primary development Mac must retain **System Integrity Protection (SIP) and normal Startup Security at all times**.
+
+This project will not require or recommend:
+- Disabling or reducing SIP.
+- Reduced Security or Recovery-mode security changes.
+- Kernel extensions or root-only USB access.
+- Forced USB device capture, device-seize fallbacks, or terminating Apple's existing USB audio clients to take ownership.
+
+Any USB access experiment must use ordinary, non-forcing access. If macOS denies access because an interface is already owned, the experiment stops. It must not escalate to capture or security reduction.
+
+A build or local experiment is not automatically safe to install. Signing, notarisation, permissions and installation requirements must be assessed and documented before asking users to run software.
 
 ## Project documentation
 
 ### Project planning
 
-- [Project goals](docs/project-goals.md) — intended hardware, functional aims and development principles.
-- [Development roadmap](docs/development-roadmap.md) — staged investigation and development plan.
+- [Project goals](docs/project-goals.md) — intended hardware, functional aims and non-negotiable development principles.
+- [Development roadmap](docs/development-roadmap.md) — current status, candidate architectures and staged development plan.
 
 ### Research notes
 
 - [Mavericks driver research](research/mavericks-driver.md) — known-working driver components, symbols and disassembly findings.
 - [Driver architecture](research/driver-architecture.md) — an initial map of the original driver's components and unanswered relationships.
 - [Apple Silicon research](research/apple-silicon.md) — modern target system and current USB detection findings.
-- [Modern macOS USB audio observations](research/modern-macos-usb-audio-observations-2026-11-12.md) — 12 November 2026 read-only interface, Core Audio and system-log findings.
+- [Modern macOS USB audio observations](research/modern-macos-usb-audio-observations-2026-11-12.md) — read-only interface, Core Audio and system-log findings.
 - [Firmware handshake investigation](research/firmware-handshake.md) — identified handshake routines and unanswered questions.
 - [Sample-rate, clock and USB stream control](research/sample-rate-clock-control.md) — 44.1/48 kHz selection, USB endpoint requests, external-rate tracking, alternate settings and AC-3 topology.
-- [Modern DriverKit architecture](research/driverkit-architecture.md) — public USBDriverKit and AudioDriverKit feasibility findings, Linux USB topology, and initialisation/control-request research.
+- [Modern DriverKit architecture](research/driverkit-architecture.md) — USBDriverKit and AudioDriverKit feasibility findings, Linux USB topology, and initialisation/control-request research.
 
 ### Hardware notes
 
@@ -52,40 +67,26 @@ Findings are being documented as the research progresses, with confirmed facts d
 
 ## Contributing
 
-Contributions and collaboration are very welcome.
+Contributions and collaboration are welcome. Useful contributions include macOS audio-driver experience, knowledge of original Mbox 2 hardware or firmware, Windows or Linux driver research, USB protocol analysis, hardware documentation, testing and careful technical review.
 
-Useful contributions could include:
-
-- Experience with macOS audio drivers, CoreAudio, IOKit or USB audio.
-- Knowledge of the original Digidesign mBox 2 hardware or firmware.
-- Windows or Linux driver research.
-- USB protocol analysis, reverse engineering or hardware documentation.
-- Access to other original mBox 2 hardware revisions for comparison.
-- Testing, documentation, and ideas for a maintainable open-source implementation.
-
-If you have relevant information, hardware, or experience, please get in touch through GitHub Issues or Discussions.
-
-Before submitting work, please read [Contributing](CONTRIBUTING.md). For security concerns, see [Security policy](SECURITY.md).
-
-Even small pieces of reliable information may help move the project forward.
+Please distinguish direct observations from interpretations and hypotheses. Do not publish copyrighted driver binaries, firmware or documentation without permission. See [Contributing](CONTRIBUTING.md) and the [Security policy](SECURITY.md).
 
 ## Project principles
 
 - Preserve original hardware wherever possible.
 - Prefer documented, reproducible research.
 - Distinguish confirmed findings from assumptions.
+- Keep SIP and normal Startup Security enabled.
+- Never force USB ownership or disrupt existing system clients.
 - Avoid unnecessary changes to working legacy systems.
+- Treat successful compilation or USB detection as distinct from working audio.
 - Build toward a maintainable, open-source solution.
 
 ## Licensing
 
-The software and driver code developed by this project is licensed under the **GNU General Public License v3.0 (GPL-3.0-only)**.
+Project-created software and driver code is licensed under the **GNU General Public License v3.0 (GPL-3.0-only)**. Original project documentation is licensed under the **Creative Commons Attribution 4.0 International (CC BY 4.0)** licence.
 
-This means that anyone may use, study, modify, and redistribute the software under the terms of that licence. If someone distributes a modified version, they must make the corresponding source code available under the same licence.
-
-Original project documentation, including research notes and written guides, is licensed under the **Creative Commons Attribution 4.0 International (CC BY 4.0)** licence.
-
-These licences apply only to material created for this project. Third-party software, firmware, documentation, research, and other materials remain subject to their original licences and permissions. They are not automatically relicensed by this project.
+These licences apply only to material created for this project. Third-party software, firmware, documentation, research and other materials remain subject to their original licences and permissions.
 
 ## A note on the project
 
