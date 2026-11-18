@@ -2,31 +2,33 @@
 
 **An open-source effort to bring the original Digidesign mBox 2 USB audio interface back to life on modern macOS.**
 
-**Project status: Research and early implementation preparation.**
+**Project status: Research and early implementation.**
 
 ## About the project
 
 The original Digidesign mBox 2 was a USB audio interface designed for an earlier generation of Mac and Windows systems. Its original drivers are no longer suitable for modern macOS, leaving otherwise functional hardware difficult to use.
 
-This project aims to investigate the hardware and its communication protocols, understand the original driver architecture, and develop a modern macOS solution.
+This project investigates the hardware and its communication protocols, the original driver architecture, and modern macOS implementation options.
 
-The longer-term goal is to make the original mBox 2 useful again on Apple Silicon Macs.
+The longer-term goal is to make the original full-size Mbox 2 useful again on Apple Silicon Macs.
 
 ## Hardware scope
 
 The initial target is the **original full-size USB Digidesign mBox 2**.
 
-Other products in the mBox family — including the mBox 2 Mini and mBox 2 Pro — use different hardware and are not assumed to be compatible. Research into those devices may be useful, but they are outside the initial hardware target.
+Other products in the mBox family — including the mBox 2 Mini and mBox 2 Pro — use different hardware and are not assumed to be compatible. They are outside the initial hardware target.
 
 ## Current status
 
-The project has completed substantial investigation of the original driver, USB identification, firmware initialisation and the proposed modern macOS architecture. Work is now moving toward the first DriverKit implementation milestone.
+The project has completed substantial reverse-engineering of the original Mavericks driver and has a minimal DriverKit source scaffold on the separate `driverkit-foundation` branch (PR #14). The recorded local Xcode 27.2 build validates compilation and packaging only.
 
-The initial implementation target is a minimal DriverKit extension that matches the original full-size Mbox 2 by USB vendor and product ID and establishes a device connection. Device-specific firmware initialisation and audio transport will be developed in subsequent steps.
+In parallel, the project is investigating a second architecture using Apple's app-level IOUSBHost framework with a Core Audio Audio Server Plug-in. This may offer a route that does not require DriverKit USB entitlements, but it has a major unresolved risk: Apple's existing `usbaudiod` clients were observed attached to the Mbox 2's Audio Control and Audio Streaming interfaces. Normal IOUSBHost access is exclusive, so the required interfaces may not be available without disruptive device capture. Device capture, root-only takeover and any SIP/security reduction are explicitly excluded.
 
-**There is not yet a working modern macOS driver.** No DriverKit extension has yet been built or loaded, and device claiming, firmware initialisation and audio input/output have not been validated by the new implementation.
+**There is not yet a working modern macOS driver.** Neither architecture has demonstrated successful activation/device ownership, Mbox 2 firmware initialisation, USB audio transfers, or real audio input/output on the modern Mac.
 
-Findings are being documented as the research progresses, with confirmed facts distinguished from hypotheses and areas still requiring investigation.
+The primary Mac's System Integrity Protection must remain enabled. The project will continue with secure signing/entitlement routes and non-invasive user-space alternatives; it will not ask the user to weaken system security to make a prototype load.
+
+Findings are documented with confirmed facts distinguished from hypotheses and areas still requiring investigation.
 
 ## Project documentation
 
@@ -37,13 +39,15 @@ Findings are being documented as the research progresses, with confirmed facts d
 
 ### Research notes
 
-- [Mavericks driver research](research/mavericks-driver.md) — known-working driver components, symbols and disassembly findings.
-- [Driver architecture](research/driver-architecture.md) — an initial map of the original driver's components and unanswered relationships.
+- [Mavericks driver research](research/mavericks-driver.md) — known-working legacy driver components, symbols and disassembly findings.
+- [Driver architecture](research/driver-architecture.md) — map of the original driver's components and unanswered relationships.
 - [Apple Silicon research](research/apple-silicon.md) — modern target system and current USB detection findings.
-- [Modern macOS USB audio observations](research/modern-macos-usb-audio-observations-2026-11-12.md) — 12 November 2026 read-only interface, Core Audio and system-log findings.
+- [Modern macOS USB audio observations](research/modern-macos-usb-audio-observations-2026-11-12.md) — read-only interface, Core Audio and system-log findings.
 - [Firmware handshake investigation](research/firmware-handshake.md) — identified handshake routines and unanswered questions.
 - [Sample-rate, clock and USB stream control](research/sample-rate-clock-control.md) — 44.1/48 kHz selection, USB endpoint requests, external-rate tracking, alternate settings and AC-3 topology.
-- [Modern DriverKit architecture](research/driverkit-architecture.md) — public USBDriverKit and AudioDriverKit feasibility findings, Linux USB topology, and initialisation/control-request research.
+- [Asynchronous input audio path](research/async-input-audio-path.md) — legacy isochronous input queue and sample-buffer findings.
+- [Modern DriverKit architecture](research/driverkit-architecture.md) — USBDriverKit and AudioDriverKit feasibility findings, Linux USB topology and initialisation research.
+- [SIP-compatible user-space path](research/sip-compatible-user-space-path.md) — IOUSBHost, Audio Server Plug-in, interface-ownership constraints and no-SIP decision gates.
 
 ### Hardware notes
 
@@ -61,7 +65,7 @@ Useful contributions could include:
 - Windows or Linux driver research.
 - USB protocol analysis, reverse engineering or hardware documentation.
 - Access to other original mBox 2 hardware revisions for comparison.
-- Testing, documentation, and ideas for a maintainable open-source implementation.
+- Testing, documentation, and ideas for a maintainable, open-source implementation.
 
 If you have relevant information, hardware, or experience, please get in touch through GitHub Issues or Discussions.
 
@@ -72,8 +76,9 @@ Even small pieces of reliable information may help move the project forward.
 ## Project principles
 
 - Preserve original hardware wherever possible.
+- Keep SIP and normal macOS security settings enabled on the primary development Mac.
 - Prefer documented, reproducible research.
-- Distinguish confirmed findings from assumptions.
+- Distinguish confirmed facts from assumptions.
 - Avoid unnecessary changes to working legacy systems.
 - Build toward a maintainable, open-source solution.
 
