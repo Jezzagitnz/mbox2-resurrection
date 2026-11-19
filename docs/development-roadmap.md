@@ -151,3 +151,13 @@ See [the 19 November USB control-transfer session record](../research/usb-contro
 - **Next:** Continue static comparison of the two startup paths before proposing any further hardware request.
 
 The exact request, returned bytes, parsing, and safety boundaries are recorded in [the 19 November USB control-transfer session record](../research/usb-control-transfer-session-2026-11-19.md).
+
+
+### 19 November 2026 — complete configuration descriptor parsed
+
+- **Confirmed on hardware:** A standard read-only GET_DESCRIPTOR request returned the full 646-byte configuration descriptor through ordinary IOUSBHost access to interface 6.
+- **Confirmed:** Offline parsing identified seven interfaces, their alternate settings, and all endpoint addresses, directions, transfer types and maximum packet sizes. The detailed map is in [the USB control-transfer session record](../research/usb-control-transfer-session-2026-11-19.md).
+- **Confirmed from descriptors:** The PCM AudioStreaming paths advertise Type I, two-channel, 24-bit samples in three-byte subframes, with a continuous 8–48 kHz range.
+- **Strong cross-check:** Interface 6 endpoints `0x02` OUT and `0x81` IN match the MIDI endpoints used by the Linux quirk. Endpoint `0x82` IN remains unexplained.
+- **Important caution:** Interface 0 has a DFU-related class/subclass identifier, but the seven-byte class-specific descriptor is not enough to claim a standard operational DFU interface.
+- **Not attempted:** No endpoint pipe or endpoint transfer, alternate-setting change, firmware request, USB reset, sample-rate operation or audio streaming was performed.
