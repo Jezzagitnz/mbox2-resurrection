@@ -139,3 +139,15 @@ A stage is complete only when its claims are backed by recorded evidence. Builds
 - **LED expectation:** A standard device-descriptor read does not request hardware initialisation or an LED-state change. No LED response is expected from this test. The physical LED state after the descriptor request was not recorded as part of the transfer output.
 
 See [the 19 November USB control-transfer session record](../research/usb-control-transfer-session-2026-11-19.md) for the request fields, exact returned bytes, parsing, cleanup, and limitations.
+
+
+### 19 November 2026 — configuration descriptor cross-check
+
+- **Confirmed on hardware:** A second standard, read-only GET_DESCRIPTOR request returned the 9-byte configuration header: `09 02 86 02 07 01 00 80 FA`.
+- **Confirmed on hardware:** The header reports a total configuration length of **646 bytes**, seven interfaces, configuration value 1, bus-powered attributes, and 500 mA maximum power.
+- **Strong cross-check:** The 646-byte total exactly matches the configuration-length prerequisite used by the Linux Mbox 2 boot quirk. This supports the conclusion that the Linux quirk recognises this hardware configuration.
+- **Important limitation:** The matching length does not prove that the Linux boot-status request or its subsequent initialisation steps are interchangeable with the Mavericks driver sequence, nor does it authorise sending either request.
+- **Not attempted:** No full configuration read, configuration selection/change, alternate-setting change, firmware/vendor request, endpoint transfer, sample-rate request, or audio operation.
+- **Next:** Continue static comparison of the two startup paths before proposing any further hardware request.
+
+The exact request, returned bytes, parsing, and safety boundaries are recorded in [the 19 November USB control-transfer session record](../research/usb-control-transfer-session-2026-11-19.md).
