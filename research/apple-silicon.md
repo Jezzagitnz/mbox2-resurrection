@@ -64,6 +64,12 @@ A USB-B to USB-C cable has been located for a later connection test. It has not 
 
 Application-level detection is not proof of a completed firmware handshake, configured audio engine, or working audio input/output.
 
+## 19 November 2026 — interface 6 endpoint descriptor query
+
+On the M1 Pro target, a read-only diagnostic created the IOUSBLib plug-in for vendor-specific interface 6 and successfully queried `IOUSBInterfaceInterface190`. `GetEndpointProperties` returned three descriptors at alternate setting 0: endpoint 1 IN (interrupt, 16-byte maximum packet, interval 1), and endpoint 2 in both OUT and IN directions (bulk, 16-byte maximum packet). The query did not open the interface, change its alternate setting, issue a control request, or transfer endpoint data.
+
+This confirms that modern macOS can expose these interface 6 endpoint descriptors through the legacy IOUSBLib interface. It does not prove that ordinary interface open/claim or any USB communication will succeed. The likely command/response and status roles of the endpoints remain hypotheses. Full method, output and limitations are recorded in [Modern macOS interface 6 endpoint discovery — 19 November 2026](modern-macos-interface-6-endpoint-discovery-2026-11-19.md).
+
 ## 12 November 2026 — modern macOS USB audio observations
 
 A separate read-only test was performed on the user's work MacBook Pro, a 16-inch model with Apple M1 Max and 32 GB RAM, running a current macOS release (Tahoe). The exact macOS version and build were not recorded. These results are documented separately from the M1 Pro target-system inventory above.
