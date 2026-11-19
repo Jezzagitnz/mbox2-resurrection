@@ -128,3 +128,14 @@ Other Mbox-family devices and unrelated audio interfaces are outside the initial
 ## Completion criteria
 
 A stage is complete only when its claims are backed by recorded evidence. Builds, packages, unit tests and device detection are useful milestones, but none independently proves successful firmware initialisation or working audio input and output.
+
+### 19 November 2026 — ordinary USB interface access and control-transfer milestone
+
+- **Confirmed on hardware:** The M1 Pro MacBook Pro enumerated the original Mbox 2 IOUSBHostInterface services and found interface 6 using registry properties for VID 0x0dba, PID 0x3000, and interface number 6.
+- **Confirmed on hardware:** An IOUSBHostInterface object for interface 6 was created with ordinary IOUSBHostObjectInitOptionsNone access, then destroyed and released successfully.
+- **Confirmed on hardware:** Through that interface object, one standard, read-only USB GET_DESCRIPTOR device-descriptor request completed successfully. All 18 requested bytes were transferred and the returned descriptor identified VID 0x0dba, PID 0x3000, device revision 0x0138.
+- **Important boundary:** This proves ordinary interface access and one successful USB control transfer. It does **not** prove firmware initialisation, device/engine activation, LED control, audio streaming, Core Audio publication, or audio input/output.
+- **Not attempted:** No seize/capture operation, configuration change, alternate-setting change, pipe creation, endpoint transfer, firmware handshake, sample-rate request, or audio streaming operation was performed.
+- **LED expectation:** A standard device-descriptor read does not request hardware initialisation or an LED-state change. No LED response is expected from this test. The physical LED state after the descriptor request was not recorded as part of the transfer output.
+
+See [the 19 November USB control-transfer session record](../research/usb-control-transfer-session-2026-11-19.md) for the request fields, exact returned bytes, parsing, cleanup, and limitations.
