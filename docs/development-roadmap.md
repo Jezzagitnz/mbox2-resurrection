@@ -106,9 +106,10 @@ Do not send vendor-specific requests, change configurations or alternate setting
 
 ### Stage 3 — Prototype the selected transport
 
-Only after Stage 1 identifies a safe access path:
-- Implement a minimal, read-only or otherwise low-risk device communication proof.
-- Add the confirmed firmware handshake.
+Only after the production transport and entitlement/ownership gates are resolved:
+- Build the smallest transport proof using ordinary, non-forcing access.
+- Begin with descriptor reads and other non-mutating operations.
+- Do not implement or send either firmware handshake until the Linux and Mavericks sequences are reconciled, the exact request is justified, and the user separately approves the hardware test.
 - Record exactly which interfaces and requests are used.
 - Keep the protocol core reusable across candidate transports.
 
