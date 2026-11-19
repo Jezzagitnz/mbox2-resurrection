@@ -148,3 +148,64 @@ The earlier observed physical state was USB indicator off and mono indicator on.
 The next step is to review the legacy startup sequence and the exact semantics of the firmware handshake before proposing any further hardware request. The successful descriptor read is a foundation for that investigation, not authorisation to send the handshake automatically.
 
 Any subsequent USB request must be separately described, bounded, and approved before it is sent.
+
+
+## Follow-up: read-only configuration-descriptor header — 19 November 2026
+
+After the successful device-descriptor read, a separately authorised standard GET_DESCRIPTOR request read only the 9-byte configuration descriptor header through the same ordinary interface-6 access path.
+
+### Exact request
+
+| Request field | Value | Meaning |
+|---|---:|---|
+| bmRequestType | 0x80 | Device-to-host, standard request, device recipient |
+| bRequest | 0x06 | GET_DESCRIPTOR |
+| wValue | 0x0200 | Configuration descriptor type (2), index 0 |
+| wIndex | 0x0000 | No language/interface index |
+| wLength | 0x0009 | 9-byte header only |
+
+The request used the existing IOUSBHostInterface object created with IOUSBHostObjectInitOptionsNone. The response buffer was 9 bytes and the completion timeout was 2.0 seconds.
+
+### Exact result
+
+Terminal output:
+
+    SUCCESS: Interface 6 opened with ordinary access.
+    Preparing one standard configuration GET_DESCRIPTOR request.
+    REQUEST SUCCEEDED.
+    Bytes transferred: 9
+    Descriptor bytes: 09 02 86 02 07 01 00 80 FA
+    Descriptor length:       9
+    Descriptor type:         2 (Configuration)
+    Total configuration size: 646 bytes
+    Number of interfaces:    7
+    Configuration value:     1
+    Attributes:               0x80
+    Maximum power:            500 mA
+    MATCH: Linux boot-quirk descriptor-length check.
+    Releasing interface...
+    Interface released.
+
+### Interpretation
+
+**Confirmed on this hardware:** the configuration descriptor reports a total configuration length of **646 bytes** and seven interfaces. The 646-byte total exactly matches the explicit configuration-length prerequisite in the Linux Mbox 2 boot quirk.
+
+This is a useful hardware-specific cross-check: the Linux boot path's descriptor-length guard matches the connected original full-size Mbox 2.
+
+**It does not establish** that the Linux boot-status request should be sent on macOS, that its firmware-initialisation sequence is interchangeable with the Mavericks driver's one-byte request, or that either request is safe to send without further analysis. Matching the descriptor length validates the Linux quirk's hardware prerequisite only; it does not validate the later protocol steps.
+
+### Scope and safety
+
+- Exactly one 9-byte standard configuration GET_DESCRIPTOR request was sent.
+- The full 646-byte configuration was **not** retrieved.
+- No configuration was selected or changed.
+- No interface alternate setting was changed.
+- No firmware/vendor-specific request, endpoint transfer, sample-rate request, or audio operation was attempted.
+- Interface 6 was destroyed and released after the request.
+- No seize/capture API or forced ownership operation was used.
+
+The read-only header request does not initialise the device and provides no reason to expect an LED change. No new physical LED observation was recorded during this test.
+
+### Updated next step
+
+Continue static comparison of the Mavericks and Linux startup paths, including their different request fields, response interpretations, polling behaviour, and post-ready actions. The 646-byte match is evidence for the Linux quirk's device match, **not** authorisation to send its firmware-status request. Any further USB request remains subject to a separate explanation and explicit approval.
