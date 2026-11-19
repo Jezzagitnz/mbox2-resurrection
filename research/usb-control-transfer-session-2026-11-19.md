@@ -197,7 +197,7 @@ This is a useful hardware-specific cross-check: the Linux boot path's descriptor
 ### Scope and safety
 
 - Exactly one 9-byte standard configuration GET_DESCRIPTOR request was sent.
-- The full 646-byte configuration was **not** retrieved.
+- At the time of this header-only follow-up, only the 9-byte header had been retrieved. A later, separately authorised read in this session retrieved the complete 646-byte configuration; see the full-descriptor follow-up below.
 - No configuration was selected or changed.
 - No interface alternate setting was changed.
 - No firmware/vendor-specific request, endpoint transfer, sample-rate request, or audio operation was attempted.
@@ -209,3 +209,94 @@ The read-only header request does not initialise the device and provides no reas
 ### Updated next step
 
 Continue static comparison of the Mavericks and Linux startup paths, including their different request fields, response interpretations, polling behaviour, and post-ready actions. The 646-byte match is evidence for the Linux quirk's device match, **not** authorisation to send its firmware-status request. Any further USB request remains subject to a separate explanation and explicit approval.
+
+
+## Follow-up: complete configuration descriptor read and offline parse — 19 November 2026
+
+A further separately authorised, standard, read-only GET_DESCRIPTOR request retrieved the complete configuration descriptor through the same ordinary IOUSBHost interface-6 access path.
+
+### Exact request
+
+| Request field | Value | Meaning |
+|---|---:|---|
+| `bmRequestType` | `0x80` | Device-to-host, standard request, device recipient |
+| `bRequest` | `0x06` | GET_DESCRIPTOR |
+| `wValue` | `0x0200` | Configuration descriptor type (2), index 0 |
+| `wIndex` | `0x0000` | No language/interface index |
+| `wLength` | `0x0286` (646) | Complete configuration descriptor |
+
+The request returned exactly 646 bytes. The raw descriptor was saved locally as `/tmp/mbox2_configuration_descriptor.bin` and parsed offline. No descriptor data was written to the device.
+
+### Parsed interface and endpoint map
+
+Endpoint packet sizes below are the descriptor's maximum packet sizes. Endpoint transfer type and direction are decoded from the endpoint address and attributes.
+
+| Interface | Alternate setting | Class / subclass / protocol | Endpoints |
+|---:|---:|---|---|
+| 0 | 0 | `0xFE / 0x01 / 0x00` | None |
+| 1 | 0 | Audio Control `0x01 / 0x01 / 0x00` | None |
+| 2 | 0 | Audio Streaming `0x01 / 0x02 / 0x00` | None |
+| 2 | 2, 3 | Audio Streaming | `0x03` OUT isochronous, 296 bytes; `0x83` IN isochronous, 3 bytes |
+| 3 | 0 | Audio Streaming `0x01 / 0x02 / 0x00` | None |
+| 3 | 2, 3 | Audio Streaming | `0x04` OUT isochronous, 296 bytes; `0x84` IN isochronous, 3 bytes |
+| 3 | 6 | Audio Streaming | `0x04` OUT isochronous, 192 bytes; no IN endpoint |
+| 4 | 0 | Audio Streaming `0x01 / 0x02 / 0x00` | None |
+| 4 | 2 | Audio Streaming | `0x85` IN isochronous, 296 bytes |
+| 4 | 3 | Audio Streaming | `0x85` IN isochronous, 296 bytes |
+| 5 | 0 | Audio Streaming `0x01 / 0x02 / 0x00` | None |
+| 5 | 2 | Audio Streaming | `0x86` IN isochronous, 296 bytes |
+| 5 | 3 | Audio Streaming | `0x86` IN isochronous, 296 bytes |
+| 6 | 0 | Vendor-specific `0xFF / 0x00 / 0x00` | `0x81` IN interrupt, 16 bytes, interval 1; `0x82` IN bulk, 16 bytes; `0x02` OUT bulk, 16 bytes |
+
+The configuration contains seven interfaces and 646 bytes total, consistent with the separately read 9-byte configuration header.
+
+### Audio descriptor observations
+
+The AudioStreaming descriptors for the PCM paths describe Type I, two-channel audio with three-byte subframes and 24-bit samples, with a continuous 8 kHz–48 kHz rate range. These are descriptor-advertised capabilities; they do not prove that every format/rate combination works with the legacy driver or a new macOS implementation.
+
+The endpoint map distinguishes several paths that must not be conflated:
+
+- Interfaces 2 and 3 have isochronous OUT audio endpoints and small IN isochronous endpoints on alternate settings 2 and 3.
+- Interfaces 4 and 5 have isochronous IN endpoints on alternate settings 2 and 3.
+- Interface 3 alternate setting 6 has an OUT endpoint with a 192-byte maximum packet and no corresponding IN endpoint. Existing legacy research associates this path with AC-3 output, but the descriptor alone does not establish its complete operating semantics.
+
+### Interface 0 descriptor caution
+
+Interface 0 reports class `0xFE`, subclass `0x01`, protocol `0x00`, and contains a seven-byte class-specific descriptor:
+
+```
+07 21 05 FF FF 08 00
+```
+
+This is recorded as a DFU-related class/subclass identifier only. The available descriptor is not sufficient to label the interface as a standard, operational DFU implementation. No DFU request was sent.
+
+### Interface 6 endpoint interpretation
+
+The Linux Mbox 2 quirk maps interface 6 endpoints `0x02` OUT and `0x81` IN to MIDI. Endpoint `0x82` IN is present in the hardware descriptor but is not assigned a role by the inspected Linux quirk. Its purpose remains unknown; it must not be labelled as MIDI, status, or clock feedback without further evidence.
+
+### What this adds — and what it does not
+
+**Confirmed on hardware:**
+1. The complete 646-byte configuration descriptor can be read through ordinary interface-6 IOUSBHost access.
+2. The configuration contains seven interfaces and the endpoint/alternate-setting map recorded above.
+3. The descriptor data can be parsed offline without further USB traffic.
+
+**Still not established:**
+- Which alternate settings the original driver selects in each operating mode.
+- The precise meaning of the small isochronous IN endpoints on interfaces 2 and 3.
+- The purpose of interface 6 endpoint `0x82`.
+- Whether interface 3 alternate setting 6 is the only AC-3 path for every hardware/firmware revision.
+- Whether the advertised PCM rates and formats are all operational.
+- Firmware initialisation, LED response, clock lock, or working audio streaming.
+
+### Scope and safety
+
+- One standard, read-only configuration GET_DESCRIPTOR request was sent for 646 bytes.
+- The descriptor was parsed offline after the transfer.
+- No configuration or alternate setting was changed.
+- No endpoint pipe was created and no endpoint data was read or written.
+- No firmware/vendor-specific request, sample-rate request, USB reset, or audio operation was attempted.
+- Interface 6 was destroyed and released normally.
+- No seize/capture API, forced ownership operation, or security-setting change was used.
+
+The complete descriptor read is a significant discovery milestone, but it remains descriptor inspection only. Any further device operation requires its own technical justification and explicit approval.
