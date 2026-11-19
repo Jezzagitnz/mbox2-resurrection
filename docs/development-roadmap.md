@@ -56,7 +56,7 @@ This is Apple's current integrated architecture for a physical audio device:
 - The Mbox 2 protocol layer handles its vendor requests, stream configuration, clocking and packet behaviour.
 - AudioDriverKit publishes the physical audio device and streams directly to the Core Audio HAL.
 
-AudioDriverKit handles the HAL user-client communication, so a separate Audio Server Plug-in is not required. Apple's current documentation and the unresolved entitlement/signing requirements are recorded in [Apple USB and audio driver architecture research](../research/apple-audio-driver-architecture-2026-11-19.md).
+AudioDriverKit handles the HAL user-client communication, so a separate Audio Server Plug-in is not required. Current Apple platform research and unresolved entitlement/signing requirements are being documented separately; see the draft research pull request linked from the project repository.
 
 **Gate:** the required DriverKit, USB transport and AudioDriverKit entitlements, provisioning/signing, activation with SIP enabled, and safe interface matching/ownership must be established. The existing DriverKit scaffold compiling is not proof that the extension can be activated. The ad-hoc sample path that requires SIP to be disabled is excluded.
 
