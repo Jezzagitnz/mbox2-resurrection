@@ -46,43 +46,57 @@ USB experiments must use ordinary, non-forcing access. If the required interface
 
 ## Candidate architecture investigation
 
-### 1. User-space USB engine with a Core Audio AudioServerPlugIn
+Current Apple documentation identifies two viable families of design, but neither is yet proven on this device.
 
-This is the current leading route to investigate because it may avoid a kernel extension and DriverKit system-extension activation.
+### 1. USBDriverKit + AudioDriverKit — direct physical audio driver
 
-A separate Apple Silicon audio-driver project provides a useful architectural reference: a user-space USB engine communicates with an AudioServerPlugIn through shared memory. Its implementation uses older IOKit USB device interfaces (IOUSBLib), rather than IOUSBHost.
+This is Apple's current integrated architecture for a physical audio device:
 
-**Important limitation:** that reference implementation attempts `USBDeviceOpenSeize()` when ordinary `USBDeviceOpen()` reports exclusive access. This project explicitly excludes that fallback. It is not yet known whether the Mbox 2 can be used reliably through ordinary, non-forcing access while Apple's existing audio clients are present.
+- USBDriverKit provides the system-extension USB device/interface/pipe transport.
+- The Mbox 2 protocol layer handles its vendor requests, stream configuration, clocking and packet behaviour.
+- AudioDriverKit publishes the physical audio device and streams directly to the Core Audio HAL.
 
-Next questions:
-- Can ordinary USB open succeed for the interfaces the Mbox 2 protocol requires?
-- Which interfaces are already owned by `usbaudiod`, and can a supported, non-disruptive design coexist with that ownership?
-- Can the engine perform the required control transfers and streaming without taking over existing clients?
-- Can the AudioServerPlugIn publish stable input/output streams with acceptable latency and lifecycle behaviour?
+AudioDriverKit handles the HAL user-client communication, so a separate Audio Server Plug-in is not required. Apple's current documentation and the unresolved entitlement/signing requirements are recorded in [Apple USB and audio driver architecture research](../research/apple-audio-driver-architecture-2026-11-19.md).
 
-### 2. DriverKit / AudioDriverKit
+**Gate:** the required DriverKit, USB transport and AudioDriverKit entitlements, provisioning/signing, activation with SIP enabled, and safe interface matching/ownership must be established. The existing DriverKit scaffold compiling is not proof that the extension can be activated. The ad-hoc sample path that requires SIP to be disabled is excluded.
 
-A minimal DriverKit scaffold exists and has compiled, but it is not signed, entitled, activated or hardware-tested.
+### 2. App-process IOUSBHost + Audio Server Plug-in — alternative user-space route
 
-The remaining entitlement, signing, activation and USB interface-ownership requirements must be established from Apple's current requirements. This route is not assumed viable until those gates are understood. No security settings will be weakened to make it work.
+Apple's IOUSBHost framework supports host-mode USB communication from apps, including custom and non-class-compliant devices. The 19 November hardware test now proves that the Mbox 2 interface 6 can be opened using ordinary IOUSBHost options and can return standard descriptors.
+
+This is a useful basis for the immediate read-only discovery implementation. A separate Audio Server Plug-in could potentially publish a Core Audio device while an app-process USB engine performs I/O, but the complete lifecycle, permission model, isochronous streaming behaviour, latency and coexistence with Apple's USB audio clients remain unproven.
+
+This route must not use any seize/capture fallback. If ordinary access to a required interface is denied, stop and record the result.
 
 ### 3. Transport-independent protocol core
 
-The C++ protocol module is deliberately independent of the eventual USB transport. It records the Mavericks one-byte handshake separately from the Linux 18-byte boot-status request, plus known timing and sample-rate facts. The meaning and relationship of the two handshake exchanges remain unresolved.
+The C++ protocol module remains independent of the eventual USB transport. It records the Mavericks one-byte handshake separately from the Linux 18-byte boot-status request. The relationship between those exchanges remains unresolved.
 
-Keep this core transport-neutral and expand it only when new protocol behaviour is supported by evidence.
+Keep the protocol core transport-neutral and expand it only when new behaviour is supported by evidence.
+
+### Immediate first-pass target
+
+Proceed with a read-only IOUSBHost discovery and descriptor-inspection module in the existing macOS utility:
+
+- Match only the original full-size Mbox 2 VID/PID.
+- Enumerate interfaces and report their class, subclass, protocol and alternate settings.
+- Parse the captured 646-byte configuration descriptor into a structured endpoint map.
+- Read standard descriptors through ordinary access only.
+- Release interface objects cleanly and report access failures without trying to take ownership by force.
+
+Do not send vendor-specific requests, change configurations or alternate settings, create endpoint pipes, or start endpoint transfers in this first pass.
 
 ## Next development stages
 
-### Stage 1 — Resolve safe USB access
+### Stage 1 — Build read-only discovery and descriptor parsing
 
-- Study the exact semantics and requirements of ordinary IOUSBLib USB open and the seize operation.
-- Compare the Eleven Rack reference architecture without copying its seize fallback.
-- Determine the Mbox 2 interfaces required for control, audio and MIDI.
-- Establish whether a normal, non-forcing open is possible without disrupting `usbaudiod`.
-- Stop if normal access is denied; do not attempt capture or security changes.
+- Implement the IOUSBHost device/interface inventory using the successful 19 November access path.
+- Add a parser for the captured 646-byte configuration descriptor and test it offline using the saved descriptor as a fixture.
+- Display the original device identity and the interface/alternate-setting/endpoint map.
+- Keep USB access ordinary and non-forcing; do not attempt to open interfaces already held by Apple's audio services.
+- Stop if access to a required interface is denied.
 
-### Stage 2 — Complete the protocol model
+### Stage 2 — Resolve safe production transport and complete the protocol model
 
 - Continue mapping the original driver's startup and firmware initialisation sequence.
 - Determine the relationship between the Mavericks and Linux handshake exchanges.
