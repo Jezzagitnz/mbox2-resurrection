@@ -23,6 +23,7 @@ The project is in **research and early implementation**, not yet at a working-dr
 - **Confirmed:** A minimal DriverKit extension and host-app scaffold compiled and packaged on Apple Silicon using Xcode 27.2.
 - **Confirmed:** A transport-independent C++17 protocol module was built and its unit tests passed in a clean Linux container.
 - **Confirmed:** Modern macOS has existing `usbaudiod` clients attached to several Mbox 2 USB interfaces, creating an interface-ownership question for any replacement transport.
+- **Confirmed:** On the Apple Silicon target, an IOUSBLib `IOUSBInterfaceInterface190` query returned three endpoint descriptors for vendor-specific interface 6 (interrupt IN and bidirectional bulk), without opening the interface or transferring USB data. This establishes descriptor-query compatibility only; see [19 November interface 6 endpoint discovery](../research/modern-macos-interface-6-endpoint-discovery-2026-11-19.md).
 
 For the detailed build/package evidence and explicit limitations, see [DriverKit scaffold status](driverkit-scaffold-status.md). The proposed secure activation gate is documented separately in [DriverKit prototype preparation](driverkit-prototype-preparation.md).
 
@@ -76,6 +77,7 @@ Keep this core transport-neutral and expand it only when new protocol behaviour 
 
 ### Stage 1 — Resolve safe USB access
 
+- **Completed read-only substep:** query interface 6 endpoint descriptors through IOUSBLib without opening the interface or transferring data. The returned descriptors are recorded in [19 November interface 6 endpoint discovery](../research/modern-macos-interface-6-endpoint-discovery-2026-11-19.md).
 - Study the exact semantics and requirements of ordinary IOUSBLib USB open and the seize operation.
 - Compare the Eleven Rack reference architecture without copying its seize fallback.
 - Determine the Mbox 2 interfaces required for control, audio and MIDI.
