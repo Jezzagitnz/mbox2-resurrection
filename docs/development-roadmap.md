@@ -20,7 +20,7 @@ The project is in **research and early implementation**, not yet at a working-dr
 
 - **Confirmed:** The original full-size Mbox 2 is identified as USB VID `0x0dba`, PID `0x3000`.
 - **Confirmed:** The original driver and relevant firmware-handshake code have been examined on the working Mavericks reference system.
-- **Confirmed:** A minimal DriverKit extension and host-app scaffold compiled and packaged on Apple Silicon using Xcode 27.2.
+- **Confirmed:** The earlier minimal DriverKit extension and host-app scaffold compiled and packaged on Apple Silicon using Xcode 27.2. The source is now published under `Driver/`, `Host/` and `Mbox2Driver.xcodeproj/`; the latest interface-6-only matching refinement still requires a fresh build.
 - **Confirmed:** A transport-independent C++17 protocol module was built and its unit tests passed in a clean Linux container.
 - **Confirmed:** Modern macOS has existing `usbaudiod` clients attached to several Mbox 2 USB interfaces, creating an interface-ownership question for any replacement transport.
 - **Confirmed:** A separate read-only IOUSBLib `IOUSBInterfaceInterface190` query returned interface 6 endpoint descriptors `0x81` interrupt IN, `0x02` bulk OUT and `0x82` bulk IN. The query did not open the interface or transfer endpoint data; see [19 November interface 6 endpoint discovery](../research/modern-macos-interface-6-endpoint-discovery-2026-11-19.md).
