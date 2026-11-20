@@ -2,7 +2,7 @@
 
 **An open-source effort to bring the original Digidesign mBox 2 USB audio interface back to life on modern macOS.**
 
-**Project status: Initial DriverKit extension and host-app build/packaging confirmed; AudioDriverKit/USBDriverKit architecture investigation underway.**
+**Project status: Minimal interface-scoped DriverKit scaffold published; prior build/package result recorded; runtime activation and hardware communication remain untested.**
 
 ## About the project
 
@@ -20,10 +20,10 @@ The Mbox 2 Mini, Mbox 2 Pro, Mbox 2 Micro and other family products are not assu
 
 The project has completed substantial investigation of the original Mavericks driver, USB identification, firmware initialisation, USB interface layout and audio-format control. Development has also produced two hardware-independent foundations:
 
-- A minimal DriverKit project scaffold that successfully compiled and packaged on Apple Silicon with Xcode 27.2.
+- A minimal DriverKit project scaffold, now published under `Driver/`, `Host/` and `Mbox2Driver.xcodeproj/`, for the original Mbox 2's vendor-specific interface 6. The earlier build/package result was obtained before the latest interface-scoped matching refinement.
 - A transport-independent C++17 protocol module with unit tests; the test suite passed in a clean Linux container.
 
-These milestones are **build and research results, not a functioning driver**. The DriverKit scaffold has not been signed with the required entitlements, installed, activated or tested against the Mbox 2. The protocol module does not communicate with USB hardware.
+These milestones are **build and research results, not a functioning driver**. The DriverKit scaffold has not been signed with the required entitlements, installed, activated or tested against the Mbox 2. The current personality targets interface 6 only; successful matching and safe runtime ownership are not yet demonstrated. The protocol module does not communicate with USB hardware.
 
 The current architecture investigation is comparing a properly entitled DriverKit route with a user-space USB engine and Core Audio AudioServerPlugIn approach. A separate Apple Silicon audio-driver project demonstrates that a user-space design can be built without a kernel extension, but its use of USB device-seize fallback is a significant safety concern and is not accepted as a solution for this project.
 
