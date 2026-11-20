@@ -1,0 +1,27 @@
+name: Protocol core tests
+
+on:
+  push:
+    paths:
+      - "protocol/**"
+      - ".github/workflows/protocol-core-tests.yml"
+  pull_request:
+    paths:
+      - "protocol/**"
+      - ".github/workflows/protocol-core-tests.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -S protocol -B build/protocol
+
+      - name: Build
+        run: cmake --build build/protocol --parallel
+
+      - name: Run tests
+        run: ctest --test-dir build/protocol --output-on-failure
