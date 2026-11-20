@@ -28,7 +28,7 @@ constexpr UsbControlRequest makeLinuxBootStatusRequest() noexcept {
     return {0xC0, 0x85, 0x0001, 0x0000, 0x0012};
 }
 
-constexpr bool shouldRetryMavericksFirmwareHandshake(
+constexpr bool isMavericksFirmwareHandshakeAccepted(
     bool transferSucceeded, std::uint8_t responseByte) noexcept {
     return transferSucceeded && responseByte == 0x01;
 }
