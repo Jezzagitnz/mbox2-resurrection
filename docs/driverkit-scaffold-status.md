@@ -4,7 +4,13 @@
 **Project target:** Original full-size Digidesign Mbox 2 (USB VID `0x0dba`, PID `0x3000`)  
 **Status:** Minimal DriverKit extension builds successfully and is embedded in the host app; AudioDriverKit and USBDriverKit APIs are present in the active SDK. Audio-device implementation and USB-audio feasibility remain unverified.
 
-## What exists locally
+## Published scaffold
+
+The minimal source scaffold is now published in the repository under `Driver/`, `Host/` and `Mbox2Driver.xcodeproj/`. The active personality is scoped to `IOUSBHostInterface` number 6, configuration 1, vendor `0x0dba`, product `0x3000`, class `0xff`, subclass 0 and protocol 0. This avoids matching the entire USB device and avoids targeting the audio interfaces currently used by Apple's audio service.
+
+This is a matching configuration proposal, not proof that macOS will match or activate it safely. The service `Start` method currently only calls its superclass and logs startup; it does not open the interface or submit transfers.
+
+## Earlier local build evidence
 
 The local development working copy contains:
 
@@ -15,7 +21,7 @@ The local development working copy contains:
 - An Xcode build phase that invokes Apple's IIG compiler and generates the driver interface header and dispatch implementation into the derived build directory.
 - A host-app copy-files phase that embeds the extension in `Contents/Library/SystemExtensions`.
 
-These are local working files. The driver source and binaries have not been published to the public repository.
+The initial successful build/package result was recorded before the interface-scoped matching refinement. The revised public project must be rebuilt before that result can be attributed to the current source.
 
 ## Confirmed progress
 
