@@ -24,10 +24,10 @@ int main() {
     assert(kLinuxBootStatusPollIntervalMilliseconds == 500);
     assert(kLinuxBootStatusMaximumAttempts == 10);
 
-    assert(shouldRetryMavericksFirmwareHandshake(true, 0x01));
-    assert(!shouldRetryMavericksFirmwareHandshake(true, 0x00));
-    assert(!shouldRetryMavericksFirmwareHandshake(true, 0x02));
-    assert(!shouldRetryMavericksFirmwareHandshake(false, 0x01));
+    assert(isMavericksFirmwareHandshakeAccepted(true, 0x01));
+    assert(!isMavericksFirmwareHandshakeAccepted(true, 0x00));
+    assert(!isMavericksFirmwareHandshakeAccepted(true, 0x02));
+    assert(!isMavericksFirmwareHandshakeAccepted(false, 0x01));
 
     const auto linuxStatus = makeLinuxBootStatusRequest();
     assert(linuxStatus.bmRequestType == 0xC0);
