@@ -2,7 +2,7 @@
 
 **Updated:** 17 November 2026  
 **Project target:** Original full-size Digidesign Mbox 2 (USB VID `0x0dba`, PID `0x3000`)  
-**Status:** Minimal DriverKit extension builds successfully and is embedded in the host app; AudioDriverKit and USBDriverKit APIs are present in the active SDK. Audio-device implementation and USB-audio feasibility remain unverified.
+**Status:** Minimal DriverKit scaffold source is published. An earlier version built and packaged successfully; the current interface-scoped revision requires a fresh build. Audio-device implementation and USB-audio feasibility remain unverified.
 
 ## Published scaffold
 
@@ -34,7 +34,7 @@ The initial successful build/package result was recorded before the interface-sc
 - The macOS host application builds successfully.
 - The extension is embedded in the host app at `Contents/Library/SystemExtensions/Mbox2Driver.dext`.
 - The packaged extension has a valid root `Info.plist`, a declared `CFBundleExecutable`, and an arm64 Mach-O executable.
-- The extension's USB personality contains the expected VID/PID and `IOUSBHostDevice` provider match.
+- The earlier build's personality matched the whole device through `IOUSBHostDevice`. The current source instead proposes a narrower `IOUSBHostInterface` match for interface 6; that revised personality has not yet been built or runtime-tested.
 
 ### SDK API investigation
 
