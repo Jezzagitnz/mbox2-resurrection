@@ -23,6 +23,7 @@ The project is in **research and early implementation**, not yet at a working-dr
 - **Confirmed:** A minimal DriverKit extension and host-app scaffold compiled and packaged on Apple Silicon using Xcode 27.2.
 - **Confirmed:** A transport-independent C++17 protocol module was built and its unit tests passed in a clean Linux container.
 - **Confirmed:** Modern macOS has existing `usbaudiod` clients attached to several Mbox 2 USB interfaces, creating an interface-ownership question for any replacement transport.
+- **Confirmed:** A separate read-only IOUSBLib `IOUSBInterfaceInterface190` query returned interface 6 endpoint descriptors `0x81` interrupt IN, `0x02` bulk OUT and `0x82` bulk IN. The query did not open the interface or transfer endpoint data; see [19 November interface 6 endpoint discovery](../research/modern-macos-interface-6-endpoint-discovery-2026-11-19.md).
 
 For the detailed build/package evidence and explicit limitations, see [DriverKit scaffold status](driverkit-scaffold-status.md). The proposed secure activation gate is documented separately in [DriverKit prototype preparation](driverkit-prototype-preparation.md).
 
@@ -62,7 +63,7 @@ AudioDriverKit handles the HAL user-client communication, so a separate Audio Se
 
 ### 2. App-process IOUSBHost + Audio Server Plug-in — alternative user-space route
 
-Apple's IOUSBHost framework supports host-mode USB communication from apps, including custom and non-class-compliant devices. The 19 November hardware test now proves that the Mbox 2 interface 6 can be opened using ordinary IOUSBHost options and can return standard descriptors.
+Apple's IOUSBHost framework supports host-mode USB communication from apps, including custom and non-class-compliant devices. The 19 November hardware test proves that an `IOUSBHostInterface` object for Mbox 2 interface 6 can be initialised using ordinary IOUSBHost options and can return standard descriptors.
 
 This is a useful basis for the immediate read-only discovery implementation. A separate Audio Server Plug-in could potentially publish a Core Audio device while an app-process USB engine performs I/O, but the complete lifecycle, permission model, isochronous streaming behaviour, latency and coexistence with Apple's USB audio clients remain unproven.
 
@@ -90,6 +91,7 @@ Do not send vendor-specific requests, change configurations or alternate setting
 
 ### Stage 1 — Build read-only discovery and descriptor parsing
 
+- **Completed read-only substep:** IOUSBLib endpoint-descriptor discovery for interface 6 returned `0x81` interrupt IN, `0x02` bulk OUT and `0x82` bulk IN. This is descriptor inspection only; it does not demonstrate interface open/claim or endpoint communication.
 - Implement the IOUSBHost device/interface inventory using the successful 19 November access path.
 - Add a parser for the captured 646-byte configuration descriptor and test it offline using the saved descriptor as a fixture.
 - Display the original device identity and the interface/alternate-setting/endpoint map.
