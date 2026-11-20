@@ -1,0 +1,339 @@
+// !$*UTF8*$!
+{
+    archiveVersion = 1;
+    classes = {};
+    objectVersion = 56;
+    objects = {
+
+/* Begin PBXBuildFile section */
+        A00000000000000000000001 /* Mbox2Driver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000001; };
+        A00000000000000000000003 /* DriverKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B00000000000000000000003; };
+        A00000000000000000000004 /* Mbox2DriverHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000004; };
+        A00000000000000000000009 /* Mbox2Driver.dext in Embed System Extensions */ = {isa = PBXBuildFile; fileRef = B00000000000000000000008; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+
+/* Begin PBXCopyFilesBuildPhase section */
+        C00000000000000000000009 /* Embed System Extensions */ = {
+            isa = PBXCopyFilesBuildPhase;
+            buildActionMask = 2147483647;
+            dstPath = "$(SYSTEM_EXTENSIONS_FOLDER_PATH)";
+            dstSubfolderSpec = 16;
+            files = (A00000000000000000000009, );
+            name = "Embed System Extensions";
+            runOnlyForDeploymentPostprocessing = 0;
+        };
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXContainerItemProxy section */
+        E00000000000000000000004 /* PBXContainerItemProxy */ = {
+            isa = PBXContainerItemProxy;
+            containerPortal = E00000000000000000000003;
+            proxyType = 1;
+            remoteGlobalIDString = E00000000000000000000001;
+            remoteInfo = Mbox2Driver;
+        };
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+        E00000000000000000000005 /* Mbox2Driver */ = {
+            isa = PBXTargetDependency;
+            target = E00000000000000000000001;
+            targetProxy = E00000000000000000000004;
+        };
+/* End PBXTargetDependency section */
+
+/* Begin PBXFileReference section */
+        B00000000000000000000001 /* Mbox2Driver.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Sources/Mbox2Driver.cpp; sourceTree = "<group>"; };
+        B00000000000000000000002 /* Mbox2Driver.iig */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Sources/Mbox2Driver.iig; sourceTree = "<group>"; };
+        B00000000000000000000003 /* DriverKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DriverKit.framework; path = System/DriverKit/System/Library/Frameworks/DriverKit.framework; sourceTree = SDKROOT; };
+        B00000000000000000000004 /* Mbox2DriverHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mbox2DriverHost.swift; sourceTree = "<group>"; };
+        B00000000000000000000005 /* DriverInfo.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = Resources/Info.plist; sourceTree = "<group>"; };
+        B00000000000000000000006 /* HostInfo.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = Info.plist; sourceTree = "<group>"; };
+        B00000000000000000000007 /* Mbox2DriverHost.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mbox2DriverHost.app; sourceTree = BUILT_PRODUCTS_DIR; };
+        B00000000000000000000008 /* Mbox2Driver.dext */ = {isa = PBXFileReference; explicitFileType = wrapper.driver-extension; includeInIndex = 0; path = Mbox2Driver.dext; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXShellScriptBuildPhase section */
+        C00000000000000000000008 /* Generate DriverKit IIG Sources */ = {
+            isa = PBXShellScriptBuildPhase;
+            buildActionMask = 2147483647;
+            files = ();
+            inputPaths = (
+                "$(SRCROOT)/Driver/Sources/Mbox2Driver.iig",
+            );
+            outputPaths = (
+                "$(DERIVED_FILE_DIR)/DriverKit/Mbox2Driver.h",
+                "$(DERIVED_FILE_DIR)/DriverKit/Mbox2Driver.iig.cpp",
+            );
+            runOnlyForDeploymentPostprocessing = 0;
+            shellPath = /bin/sh;
+            shellScript = "set -eu\nIIG=\"$(xcrun --find iig)\"\nSDK=\"$(xcrun --sdk driverkit --show-sdk-path)\"\nOUT_DIR=\"${DERIVED_FILE_DIR}/DriverKit\"\nmkdir -p \"$OUT_DIR\"\n\"$IIG\" \\\n  --def \"${SRCROOT}/Driver/Sources/Mbox2Driver.iig\" \\\n  --header \"$OUT_DIR/Mbox2Driver.h\" \\\n  --impl \"$OUT_DIR/Mbox2Driver.iig.cpp\" \\\n  --framework-name DriverKit \\\n  --deployment-target \"${DRIVERKIT_DEPLOYMENT_TARGET}\" \\\n  -- \\\n  -x c++ \\\n  -std=gnu++20 \\\n  -D__IIG=1 \\\n  -isysroot \"$SDK\" \\\n  -F \"$SDK/System/DriverKit/System/Library/Frameworks\"\n";
+        };
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXHeadersBuildPhase section */
+        C00000000000000000000007 /* Driver Headers */ = {
+            isa = PBXHeadersBuildPhase;
+            buildActionMask = 2147483647;
+            files = ();
+            runOnlyForDeploymentPostprocessing = 0;
+        };
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXFrameworksBuildPhase section */
+        C00000000000000000000001 /* Driver Frameworks */ = {
+            isa = PBXFrameworksBuildPhase;
+            buildActionMask = 2147483647;
+            files = (A00000000000000000000003, );
+            runOnlyForDeploymentPostprocessing = 0;
+        };
+        C00000000000000000000002 /* Host Frameworks */ = {
+            isa = PBXFrameworksBuildPhase;
+            buildActionMask = 2147483647;
+            files = ();
+            runOnlyForDeploymentPostprocessing = 0;
+        };
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+        D00000000000000000000001 = {
+            isa = PBXGroup;
+            children = (
+                D00000000000000000000002 /* Driver */,
+                D00000000000000000000003 /* Host */,
+                D00000000000000000000004 /* Frameworks */,
+                D00000000000000000000005 /* Products */,
+            );
+            sourceTree = "<group>";
+        };
+        D00000000000000000000002 /* Driver */ = {
+            isa = PBXGroup;
+            children = (
+                B00000000000000000000001,
+                B00000000000000000000002,
+                B00000000000000000000005,
+            );
+            path = Driver;
+            sourceTree = "<group>";
+        };
+        D00000000000000000000003 /* Host */ = {
+            isa = PBXGroup;
+            children = (B00000000000000000000004, B00000000000000000000006, );
+            path = Host;
+            sourceTree = "<group>";
+        };
+        D00000000000000000000004 /* Frameworks */ = {
+            isa = PBXGroup;
+            children = (B00000000000000000000003, );
+            name = Frameworks;
+            sourceTree = "<group>";
+        };
+        D00000000000000000000005 /* Products */ = {
+            isa = PBXGroup;
+            children = (B00000000000000000000007, B00000000000000000000008, );
+            name = Products;
+            sourceTree = "<group>";
+        };
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+        E00000000000000000000001 /* Mbox2Driver */ = {
+            isa = PBXNativeTarget;
+            buildConfigurationList = F00000000000000000000007;
+            buildPhases = (
+                C00000000000000000000008 /* Generate DriverKit IIG Sources */,
+                C00000000000000000000007 /* Driver Headers */,
+                C00000000000000000000003 /* Driver Sources */,
+                C00000000000000000000001 /* Driver Frameworks */,
+                C00000000000000000000004 /* Driver Resources */,
+            );
+            buildRules = ();
+            dependencies = ();
+            name = Mbox2Driver;
+            productName = Mbox2Driver;
+            productReference = B00000000000000000000008;
+            productType = "com.apple.product-type.driver-extension";
+        };
+        E00000000000000000000002 /* Mbox2DriverHost */ = {
+            isa = PBXNativeTarget;
+            buildConfigurationList = F00000000000000000000008;
+            buildPhases = (
+                C00000000000000000000005 /* Host Sources */,
+                C00000000000000000000002 /* Host Frameworks */,
+                C00000000000000000000006 /* Host Resources */,
+                C00000000000000000000009 /* Embed System Extensions */,
+            );
+            buildRules = ();
+            dependencies = (E00000000000000000000005, );
+            name = Mbox2DriverHost;
+            productName = Mbox2DriverHost;
+            productReference = B00000000000000000000007;
+            productType = "com.apple.product-type.application";
+        };
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+        E00000000000000000000003 /* Project object */ = {
+            isa = PBXProject;
+            attributes = {
+                BuildIndependentTargetsInParallel = 1;
+                LastUpgradeCheck = 2720;
+                TargetAttributes = {
+                    E00000000000000000000001 = { CreatedOnToolsVersion = 27.2; };
+                    E00000000000000000000002 = { CreatedOnToolsVersion = 27.2; };
+                };
+            };
+            buildConfigurationList = F00000000000000000000009;
+            compatibilityVersion = "Xcode 14.0";
+            developmentRegion = en;
+            hasScannedForEncodings = 0;
+            knownRegions = (en, Base, );
+            mainGroup = D00000000000000000000001;
+            productRefGroup = D00000000000000000000005;
+            projectDirPath = "";
+            projectRoot = "";
+            targets = (E00000000000000000000001, E00000000000000000000002, );
+        };
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+        C00000000000000000000004 /* Driver Resources */ = {
+            isa = PBXResourcesBuildPhase;
+            buildActionMask = 2147483647;
+            files = ();
+            runOnlyForDeploymentPostprocessing = 0;
+        };
+        C00000000000000000000006 /* Host Resources */ = {
+            isa = PBXResourcesBuildPhase;
+            buildActionMask = 2147483647;
+            files = ();
+            runOnlyForDeploymentPostprocessing = 0;
+        };
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+        C00000000000000000000003 /* Driver Sources */ = {
+            isa = PBXSourcesBuildPhase;
+            buildActionMask = 2147483647;
+            files = (A00000000000000000000001, );
+            runOnlyForDeploymentPostprocessing = 0;
+        };
+        C00000000000000000000005 /* Host Sources */ = {
+            isa = PBXSourcesBuildPhase;
+            buildActionMask = 2147483647;
+            files = (A00000000000000000000004, );
+            runOnlyForDeploymentPostprocessing = 0;
+        };
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+        F00000000000000000000001 /* Driver Debug */ = {
+            isa = XCBuildConfiguration;
+            buildSettings = {
+                CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+                HEADER_SEARCH_PATHS = ("$(DERIVED_FILE_DIR)", "$(inherited)", );
+                CODE_SIGNING_ALLOWED = NO;
+                DRIVERKIT_DEPLOYMENT_TARGET = 27.2;
+                GENERATE_INFOPLIST_FILE = NO;
+                INFOPLIST_FILE = Driver/Resources/Info.plist;
+                PRODUCT_BUNDLE_IDENTIFIER = org.mbox2resurrection.driver;
+                PRODUCT_NAME = "$(TARGET_NAME)";
+                SDKROOT = driverkit;
+                SKIP_INSTALL = YES;
+                SUPPORTED_PLATFORMS = driverkit;
+            };
+            name = Debug;
+        };
+        F00000000000000000000002 /* Host Debug */ = {
+            isa = XCBuildConfiguration;
+            buildSettings = {
+                CODE_SIGNING_ALLOWED = NO;
+                GENERATE_INFOPLIST_FILE = NO;
+                INFOPLIST_FILE = Host/Info.plist;
+                MACOSX_DEPLOYMENT_TARGET = 14.0;
+                PRODUCT_BUNDLE_IDENTIFIER = org.mbox2resurrection.host;
+                PRODUCT_NAME = "$(TARGET_NAME)";
+                SDKROOT = macosx;
+                SWIFT_VERSION = 5.0;
+                SUPPORTED_PLATFORMS = macosx;
+            };
+            name = Debug;
+        };
+        F00000000000000000000003 /* Project Debug */ = {
+            isa = XCBuildConfiguration;
+            buildSettings = {
+                ALWAYS_SEARCH_USER_PATHS = NO;
+                CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+                MACOSX_DEPLOYMENT_TARGET = 14.0;
+                SDKROOT = macosx;
+            };
+            name = Debug;
+        };
+        F00000000000000000000004 /* Driver Release */ = {
+            isa = XCBuildConfiguration;
+            buildSettings = {
+                CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+                HEADER_SEARCH_PATHS = ("$(DERIVED_FILE_DIR)", "$(inherited)", );
+                CODE_SIGNING_ALLOWED = NO;
+                DRIVERKIT_DEPLOYMENT_TARGET = 27.2;
+                GENERATE_INFOPLIST_FILE = NO;
+                INFOPLIST_FILE = Driver/Resources/Info.plist;
+                PRODUCT_BUNDLE_IDENTIFIER = org.mbox2resurrection.driver;
+                PRODUCT_NAME = "$(TARGET_NAME)";
+                SDKROOT = driverkit;
+                SKIP_INSTALL = YES;
+                SUPPORTED_PLATFORMS = driverkit;
+            };
+            name = Release;
+        };
+        F00000000000000000000005 /* Host Release */ = {
+            isa = XCBuildConfiguration;
+            buildSettings = {
+                CODE_SIGNING_ALLOWED = NO;
+                GENERATE_INFOPLIST_FILE = NO;
+                INFOPLIST_FILE = Host/Info.plist;
+                MACOSX_DEPLOYMENT_TARGET = 14.0;
+                PRODUCT_BUNDLE_IDENTIFIER = org.mbox2resurrection.host;
+                PRODUCT_NAME = "$(TARGET_NAME)";
+                SDKROOT = macosx;
+                SWIFT_VERSION = 5.0;
+                SUPPORTED_PLATFORMS = macosx;
+            };
+            name = Release;
+        };
+        F00000000000000000000006 /* Project Release */ = {
+            isa = XCBuildConfiguration;
+            buildSettings = {
+                ALWAYS_SEARCH_USER_PATHS = NO;
+                CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+                MACOSX_DEPLOYMENT_TARGET = 14.0;
+                SDKROOT = macosx;
+            };
+            name = Release;
+        };
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+        F00000000000000000000007 = {
+            isa = XCConfigurationList;
+            buildConfigurations = (F00000000000000000000001, F00000000000000000000004, );
+            defaultConfigurationIsVisible = 0;
+            defaultConfigurationName = Debug;
+        };
+        F00000000000000000000008 = {
+            isa = XCConfigurationList;
+            buildConfigurations = (F00000000000000000000002, F00000000000000000000005, );
+            defaultConfigurationIsVisible = 0;
+            defaultConfigurationName = Debug;
+        };
+        F00000000000000000000009 = {
+            isa = XCConfigurationList;
+            buildConfigurations = (F00000000000000000000003, F00000000000000000000006, );
+            defaultConfigurationIsVisible = 0;
+            defaultConfigurationName = Debug;
+        };
+/* End XCConfigurationList section */
+    };
+    rootObject = E00000000000000000000003;
+}
