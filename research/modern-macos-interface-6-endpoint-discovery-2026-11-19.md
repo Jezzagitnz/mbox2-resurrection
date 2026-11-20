@@ -40,15 +40,15 @@ The SDK header documents `GetEndpointProperties` as returning transfer type, max
 
 ## Results
 
-| Endpoint number | Direction | Transfer type | Maximum packet size | Interval |
+| Endpoint address | Direction | Transfer type | Maximum packet size | Interval |
 |---:|---|---|---:|---:|
-| 1 | IN | Interrupt | 16 bytes | 1 |
-| 2 | OUT | Bulk | 16 bytes | Not applicable / reported 0 |
-| 2 | IN | Bulk | 16 bytes | Not applicable / reported 0 |
+| `0x81` | IN | Interrupt | 16 bytes | 1 |
+| `0x02` | OUT | Bulk | 16 bytes | Not applicable / reported 0 |
+| `0x82` | IN | Bulk | 16 bytes | Not applicable / reported 0 |
 
 Three endpoint queries succeeded. All other tested endpoint/direction combinations did not return endpoint properties.
 
-The endpoint numbers and directions above are the parameters used for the descriptor query. They are not a claim that the endpoint's protocol purpose has been identified.
+The endpoint addresses above combine the queried endpoint number with its USB direction bit; they match the addresses in the complete configuration-descriptor map. They are not a claim that the endpoint's protocol purpose has been identified.
 
 ## Interpretation and evidence limits
 
