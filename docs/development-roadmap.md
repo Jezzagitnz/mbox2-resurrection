@@ -46,43 +46,57 @@ USB experiments must use ordinary, non-forcing access. If the required interface
 
 ## Candidate architecture investigation
 
-### 1. User-space USB engine with a Core Audio AudioServerPlugIn
+Current Apple documentation identifies two viable families of design, but neither is yet proven on this device.
 
-This is the current leading route to investigate because it may avoid a kernel extension and DriverKit system-extension activation.
+### 1. USBDriverKit + AudioDriverKit — direct physical audio driver
 
-A separate Apple Silicon audio-driver project provides a useful architectural reference: a user-space USB engine communicates with an AudioServerPlugIn through shared memory. Its implementation uses older IOKit USB device interfaces (IOUSBLib), rather than IOUSBHost.
+This is Apple's current integrated architecture for a physical audio device:
 
-**Important limitation:** that reference implementation attempts `USBDeviceOpenSeize()` when ordinary `USBDeviceOpen()` reports exclusive access. This project explicitly excludes that fallback. It is not yet known whether the Mbox 2 can be used reliably through ordinary, non-forcing access while Apple's existing audio clients are present.
+- USBDriverKit provides the system-extension USB device/interface/pipe transport.
+- The Mbox 2 protocol layer handles its vendor requests, stream configuration, clocking and packet behaviour.
+- AudioDriverKit publishes the physical audio device and streams directly to the Core Audio HAL.
 
-Next questions:
-- Can ordinary USB open succeed for the interfaces the Mbox 2 protocol requires?
-- Which interfaces are already owned by `usbaudiod`, and can a supported, non-disruptive design coexist with that ownership?
-- Can the engine perform the required control transfers and streaming without taking over existing clients?
-- Can the AudioServerPlugIn publish stable input/output streams with acceptable latency and lifecycle behaviour?
+AudioDriverKit handles the HAL user-client communication, so a separate Audio Server Plug-in is not required. Current Apple platform research and unresolved entitlement/signing requirements are being documented separately; see the draft research pull request linked from the project repository.
 
-### 2. DriverKit / AudioDriverKit
+**Gate:** the required DriverKit, USB transport and AudioDriverKit entitlements, provisioning/signing, activation with SIP enabled, and safe interface matching/ownership must be established. The existing DriverKit scaffold compiling is not proof that the extension can be activated. The ad-hoc sample path that requires SIP to be disabled is excluded.
 
-A minimal DriverKit scaffold exists and has compiled, but it is not signed, entitled, activated or hardware-tested.
+### 2. App-process IOUSBHost + Audio Server Plug-in — alternative user-space route
 
-The remaining entitlement, signing, activation and USB interface-ownership requirements must be established from Apple's current requirements. This route is not assumed viable until those gates are understood. No security settings will be weakened to make it work.
+Apple's IOUSBHost framework supports host-mode USB communication from apps, including custom and non-class-compliant devices. The 19 November hardware test now proves that the Mbox 2 interface 6 can be opened using ordinary IOUSBHost options and can return standard descriptors.
+
+This is a useful basis for the immediate read-only discovery implementation. A separate Audio Server Plug-in could potentially publish a Core Audio device while an app-process USB engine performs I/O, but the complete lifecycle, permission model, isochronous streaming behaviour, latency and coexistence with Apple's USB audio clients remain unproven.
+
+This route must not use any seize/capture fallback. If ordinary access to a required interface is denied, stop and record the result.
 
 ### 3. Transport-independent protocol core
 
-The C++ protocol module is deliberately independent of the eventual USB transport. It records the Mavericks one-byte handshake separately from the Linux 18-byte boot-status request, plus known timing and sample-rate facts. The meaning and relationship of the two handshake exchanges remain unresolved.
+The C++ protocol module remains independent of the eventual USB transport. It records the Mavericks one-byte handshake separately from the Linux 18-byte boot-status request. The relationship between those exchanges remains unresolved.
 
-Keep this core transport-neutral and expand it only when new protocol behaviour is supported by evidence.
+Keep the protocol core transport-neutral and expand it only when new behaviour is supported by evidence.
+
+### Immediate first-pass target
+
+Proceed with a read-only IOUSBHost discovery and descriptor-inspection module in the existing macOS utility:
+
+- Match only the original full-size Mbox 2 VID/PID.
+- Enumerate interfaces and report their class, subclass, protocol and alternate settings.
+- Parse the captured 646-byte configuration descriptor into a structured endpoint map.
+- Read standard descriptors through ordinary access only.
+- Release interface objects cleanly and report access failures without trying to take ownership by force.
+
+Do not send vendor-specific requests, change configurations or alternate settings, create endpoint pipes, or start endpoint transfers in this first pass.
 
 ## Next development stages
 
-### Stage 1 — Resolve safe USB access
+### Stage 1 — Build read-only discovery and descriptor parsing
 
-- Study the exact semantics and requirements of ordinary IOUSBLib USB open and the seize operation.
-- Compare the Eleven Rack reference architecture without copying its seize fallback.
-- Determine the Mbox 2 interfaces required for control, audio and MIDI.
-- Establish whether a normal, non-forcing open is possible without disrupting `usbaudiod`.
-- Stop if normal access is denied; do not attempt capture or security changes.
+- Implement the IOUSBHost device/interface inventory using the successful 19 November access path.
+- Add a parser for the captured 646-byte configuration descriptor and test it offline using the saved descriptor as a fixture.
+- Display the original device identity and the interface/alternate-setting/endpoint map.
+- Keep USB access ordinary and non-forcing; do not attempt to open interfaces already held by Apple's audio services.
+- Stop if access to a required interface is denied.
 
-### Stage 2 — Complete the protocol model
+### Stage 2 — Resolve safe production transport and complete the protocol model
 
 - Continue mapping the original driver's startup and firmware initialisation sequence.
 - Determine the relationship between the Mavericks and Linux handshake exchanges.
@@ -92,9 +106,10 @@ Keep this core transport-neutral and expand it only when new protocol behaviour 
 
 ### Stage 3 — Prototype the selected transport
 
-Only after Stage 1 identifies a safe access path:
-- Implement a minimal, read-only or otherwise low-risk device communication proof.
-- Add the confirmed firmware handshake.
+Only after the production transport and entitlement/ownership gates are resolved:
+- Build the smallest transport proof using ordinary, non-forcing access.
+- Begin with descriptor reads and other non-mutating operations.
+- Do not implement or send either firmware handshake until the Linux and Mavericks sequences are reconciled, the exact request is justified, and the user separately approves the hardware test.
 - Record exactly which interfaces and requests are used.
 - Keep the protocol core reusable across candidate transports.
 
@@ -128,3 +143,36 @@ Other Mbox-family devices and unrelated audio interfaces are outside the initial
 ## Completion criteria
 
 A stage is complete only when its claims are backed by recorded evidence. Builds, packages, unit tests and device detection are useful milestones, but none independently proves successful firmware initialisation or working audio input and output.
+
+### 19 November 2026 — ordinary USB interface access and control-transfer milestone
+
+- **Confirmed on hardware:** The M1 Pro MacBook Pro enumerated the original Mbox 2 IOUSBHostInterface services and found interface 6 using registry properties for VID 0x0dba, PID 0x3000, and interface number 6.
+- **Confirmed on hardware:** An IOUSBHostInterface object for interface 6 was created with ordinary IOUSBHostObjectInitOptionsNone access, then destroyed and released successfully.
+- **Confirmed on hardware:** Through that interface object, one standard, read-only USB GET_DESCRIPTOR device-descriptor request completed successfully. All 18 requested bytes were transferred and the returned descriptor identified VID 0x0dba, PID 0x3000, device revision 0x0138.
+- **Important boundary:** This proves ordinary interface access and one successful USB control transfer. It does **not** prove firmware initialisation, device/engine activation, LED control, audio streaming, Core Audio publication, or audio input/output.
+- **Not attempted:** No seize/capture operation, configuration change, alternate-setting change, pipe creation, endpoint transfer, firmware handshake, sample-rate request, or audio streaming operation was performed.
+- **LED expectation:** A standard device-descriptor read does not request hardware initialisation or an LED-state change. No LED response is expected from this test. The physical LED state after the descriptor request was not recorded as part of the transfer output.
+
+See [the 19 November USB control-transfer session record](../research/usb-control-transfer-session-2026-11-19.md) for the request fields, exact returned bytes, parsing, cleanup, and limitations.
+
+
+### 19 November 2026 — configuration descriptor cross-check
+
+- **Confirmed on hardware:** A second standard, read-only GET_DESCRIPTOR request returned the 9-byte configuration header: `09 02 86 02 07 01 00 80 FA`.
+- **Confirmed on hardware:** The header reports a total configuration length of **646 bytes**, seven interfaces, configuration value 1, bus-powered attributes, and 500 mA maximum power.
+- **Strong cross-check:** The 646-byte total exactly matches the configuration-length prerequisite used by the Linux Mbox 2 boot quirk. This supports the conclusion that the Linux quirk recognises this hardware configuration.
+- **Important limitation:** The matching length does not prove that the Linux boot-status request or its subsequent initialisation steps are interchangeable with the Mavericks driver sequence, nor does it authorise sending either request.
+- **Not attempted:** No full configuration read, configuration selection/change, alternate-setting change, firmware/vendor request, endpoint transfer, sample-rate request, or audio operation.
+- **Next:** Continue static comparison of the two startup paths before proposing any further hardware request.
+
+The exact request, returned bytes, parsing, and safety boundaries are recorded in [the 19 November USB control-transfer session record](../research/usb-control-transfer-session-2026-11-19.md).
+
+
+### 19 November 2026 — complete configuration descriptor parsed
+
+- **Confirmed on hardware:** A standard read-only GET_DESCRIPTOR request returned the full 646-byte configuration descriptor through ordinary IOUSBHost access to interface 6.
+- **Confirmed:** Offline parsing identified seven interfaces, their alternate settings, and all endpoint addresses, directions, transfer types and maximum packet sizes. The detailed map is in [the USB control-transfer session record](../research/usb-control-transfer-session-2026-11-19.md).
+- **Confirmed from descriptors:** The PCM AudioStreaming paths advertise Type I, two-channel, 24-bit samples in three-byte subframes, with a continuous 8–48 kHz range.
+- **Strong cross-check:** Interface 6 endpoints `0x02` OUT and `0x81` IN match the MIDI endpoints used by the Linux quirk. Endpoint `0x82` IN remains unexplained.
+- **Important caution:** Interface 0 has a DFU-related class/subclass identifier, but the seven-byte class-specific descriptor is not enough to claim a standard operational DFU interface.
+- **Not attempted:** No endpoint pipe or endpoint transfer, alternate-setting change, firmware request, USB reset, sample-rate operation or audio streaming was performed.
