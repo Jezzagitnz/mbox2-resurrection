@@ -2,7 +2,7 @@
 
 This small C++17 library records protocol facts that can be tested without a connected Mbox 2 or a particular USB API.
 
-It deliberately contains no USB transport, device discovery, interface claiming, device capture, audio I/O, or system configuration. The same protocol code can later be called from either a USBDriverKit service or an ordinary IOUSBHost helper.
+It deliberately contains no USB transport, device discovery, interface claiming, device capture, audio I/O, or system configuration. The selected architecture keeps this protocol layer independent of the user-space USB transport and the Core Audio integration. The same protocol code is intended to be used by the project's ordinary macOS user-space USB process. DriverKit is parked and is not an active implementation path or fallback.
 
 ## Currently represented
 
