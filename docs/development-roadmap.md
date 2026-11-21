@@ -12,30 +12,30 @@ Use these labels consistently:
 - **Open question** — not yet answered by available evidence.
 - **Not tested** — no test has yet been performed.
 
-## Current status — November 2026
+## Current status — 21 November 2026
 
-The project is in **research and early implementation**, not yet at a working-driver stage.
+The project has selected the **Eleven Rack-style user-space architecture** as its sole implementation path. DriverKit and kernel extensions are not fallback options.
 
 ### Completed and evidenced foundations
 
 - **Confirmed:** The original full-size Mbox 2 is identified as USB VID `0x0dba`, PID `0x3000`.
-- **Confirmed:** The original driver and relevant firmware-handshake code have been examined on the working Mavericks reference system.
-- **Confirmed:** A minimal DriverKit extension and host-app scaffold compiled and packaged on Apple Silicon using Xcode 27.2.
-- **Confirmed:** A transport-independent C++17 protocol module was built and its unit tests passed in a clean Linux container.
-- **Confirmed:** Modern macOS has existing `usbaudiod` clients attached to several Mbox 2 USB interfaces, creating an interface-ownership question for any replacement transport.
-- **Confirmed:** A separate read-only IOUSBLib `IOUSBInterfaceInterface190` query returned interface 6 endpoint descriptors `0x81` interrupt IN, `0x02` bulk OUT and `0x82` bulk IN. The query did not open the interface or transfer endpoint data; see [19 November interface 6 endpoint discovery](../research/modern-macos-interface-6-endpoint-discovery-2026-11-19.md).
-
-For the detailed build/package evidence and explicit limitations, see [DriverKit scaffold status](driverkit-scaffold-status.md). The proposed secure activation gate is documented separately in [DriverKit prototype preparation](driverkit-prototype-preparation.md).
+- **Confirmed:** The device already appears in macOS Audio MIDI Setup. This is device enumeration, not proof of working audio.
+- **Confirmed:** Ordinary user-space USB discovery has identified the device and read its descriptors.
+- **Confirmed:** An `IOUSBHostInterface` object for interface 6 was initialised using ordinary `IOUSBHostObjectInitOptionsNone` access, then released cleanly.
+- **Confirmed:** Through that interface object, a standard read-only USB GET_DESCRIPTOR device request returned all 18 bytes and identified the Mbox 2.
+- **Confirmed:** The full 646-byte configuration descriptor has been read and parsed; seven interfaces and their alternate settings/endpoints are documented.
+- **Confirmed locally:** The existing Host application was detached from its DriverKit dependency and its standalone macOS target built successfully with Xcode 27.2. The corresponding project-file change is not yet published on the main branch.
+- **Confirmed:** The legacy Mavericks driver and Linux Mbox 2 boot quirk have been examined. Their startup request sequences are not yet reconciled.
 
 ### Not demonstrated
 
-- DriverKit signing with the required entitlements, installation, activation or runtime loading.
-- Successful device matching or ownership by the new implementation.
-- Firmware initialisation on modern macOS.
-- USB audio transfers, Core Audio device publication, capture or playback.
-- 16-bit/24-bit operation, 44.1/48 kHz switching, or internal/external S/PDIF clock behaviour in a new driver.
+- The device-specific firmware/device initialisation sequence on modern macOS.
+- The expected all-LEDs-on state.
+- USB audio endpoint transfers or streaming.
+- Working Core Audio input and output.
+- Operation in Universal Audio LUNA.
 
-A successful compile, package, unit test or USB enumeration is not evidence of working audio.
+Audio MIDI Setup visibility, descriptor reads and a successful application build are not evidence of working audio.
 
 ## Non-negotiable security boundary
 
@@ -45,96 +45,68 @@ The project will not use kernel extensions, Reduced Security, Recovery-mode chan
 
 USB experiments must use ordinary, non-forcing access. If the required interface is already owned and normal access is denied, stop and record the result. Do not escalate.
 
-## Candidate architecture investigation
+## Selected architecture — Eleven Rack-style user-space implementation
 
-Current Apple documentation identifies two viable families of design, but neither is yet proven on this device.
+This is the sole active implementation path. Do not develop a DriverKit or kernel-extension fallback.
 
-### 1. USBDriverKit + AudioDriverKit — direct physical audio driver
+The implementation is based on ordinary user-space USB communication, a transport-independent Mbox 2 protocol layer, and a Core Audio integration layer. The intended separation is:
 
-This is Apple's current integrated architecture for a physical audio device:
+- **USB transport/helper:** ordinary app-level USB access for the Mbox 2 protocol and device I/O.
+- **Protocol core:** transport-independent request construction, response parsing and device state.
+- **Core Audio integration:** publish a usable input/output device and bridge audio safely between the USB engine and Core Audio.
+- **Configuration utility:** expose connection, device state and supported settings without taking ownership by force.
 
-- USBDriverKit provides the system-extension USB device/interface/pipe transport.
-- The Mbox 2 protocol layer handles its vendor requests, stream configuration, clocking and packet behaviour.
-- AudioDriverKit publishes the physical audio device and streams directly to the Core Audio HAL.
+The precise helper/plug-in process boundary, Audio Server Plug-in lifecycle, signing and packaging requirements must be validated against the target macOS SDK. Do not claim those details are solved merely because the USB API experiment succeeded.
 
-AudioDriverKit handles the HAL user-client communication, so a separate Audio Server Plug-in is not required. Current Apple platform research and unresolved entitlement/signing requirements are being documented separately; see the draft research pull request linked from the project repository.
+### Security boundary
 
-**Gate:** the required DriverKit, USB transport and AudioDriverKit entitlements, provisioning/signing, activation with SIP enabled, and safe interface matching/ownership must be established. The existing DriverKit scaffold compiling is not proof that the extension can be activated. The ad-hoc sample path that requires SIP to be disabled is excluded.
+- Keep SIP and normal Startup Security unchanged.
+- Use ordinary, non-forcing USB access only.
+- No DriverKit/kernel-extension fallback.
+- No device seize/capture, root-only takeover, or termination of Apple's USB audio services.
+- If normal access to a required interface is denied, stop and record the limitation. Do not escalate.
 
-### 2. App-process IOUSBHost + Audio Server Plug-in — alternative user-space route
+### Transport-independent protocol core
 
-Apple's IOUSBHost framework supports host-mode USB communication from apps, including custom and non-class-compliant devices. The 19 November hardware test proves that an `IOUSBHostInterface` object for Mbox 2 interface 6 can be initialised using ordinary IOUSBHost options and can return standard descriptors.
-
-This is a useful basis for the immediate read-only discovery implementation. A separate Audio Server Plug-in could potentially publish a Core Audio device while an app-process USB engine performs I/O, but the complete lifecycle, permission model, isochronous streaming behaviour, latency and coexistence with Apple's USB audio clients remain unproven.
-
-This route must not use any seize/capture fallback. If ordinary access to a required interface is denied, stop and record the result.
-
-### 3. Transport-independent protocol core
-
-The C++ protocol module remains independent of the eventual USB transport. It records the Mavericks one-byte handshake separately from the Linux 18-byte boot-status request. The relationship between those exchanges remains unresolved.
-
-Keep the protocol core transport-neutral and expand it only when new behaviour is supported by evidence.
-
-### Immediate first-pass target
-
-Proceed with a read-only IOUSBHost discovery and descriptor-inspection module in the existing macOS utility:
-
-- Match only the original full-size Mbox 2 VID/PID.
-- Enumerate interfaces and report their class, subclass, protocol and alternate settings.
-- Parse the captured 646-byte configuration descriptor into a structured endpoint map.
-- Read standard descriptors through ordinary access only.
-- Release interface objects cleanly and report access failures without trying to take ownership by force.
-
-Do not send vendor-specific requests, change configurations or alternate settings, create endpoint pipes, or start endpoint transfers in this first pass.
+The protocol core must remain independent of the USB transport. The Mavericks driver contains a one-byte firmware handshake using request `0x85`; the Linux Mbox 2 quirk uses a different 18-byte boot-status request. Their relationship and ordering remain unresolved. Do not merge the two sequences by assumption.
 
 ## Next development stages
 
-### Stage 1 — Build read-only discovery and descriptor parsing
+### Stage 1 — Device initialisation and LED milestone
 
-- **Completed read-only substep:** IOUSBLib endpoint-descriptor discovery for interface 6 returned `0x81` interrupt IN, `0x02` bulk OUT and `0x82` bulk IN. This is descriptor inspection only; it does not demonstrate interface open/claim or endpoint communication.
-- Implement the IOUSBHost device/interface inventory using the successful 19 November access path.
-- Add a parser for the captured 646-byte configuration descriptor and test it offline using the saved descriptor as a fixture.
-- Display the original device identity and the interface/alternate-setting/endpoint map.
-- Keep USB access ordinary and non-forcing; do not attempt to open interfaces already held by Apple's audio services.
-- Stop if access to a required interface is denied.
+This is the immediate next milestone. Discovery, Audio MIDI Setup visibility, descriptor reading and ordinary interface-6 attachment are already demonstrated; do not repeat them.
 
-### Stage 2 — Resolve safe production transport and complete the protocol model
+- Continue static analysis of the Mavericks driver and Linux Mbox 2 startup path.
+- Reconcile the different handshake/status requests, their parameters, order, expected responses and retry behaviour.
+- Identify the complete initialisation sequence required to bring the Mbox 2 into its operational state.
+- Document each request and the evidence supporting it.
+- Do not send a firmware/vendor-specific or state-changing request until the sequence is reconciled, the exact test is justified, and the user explicitly approves it.
+- Success criterion: the device initialises and all expected Mbox 2 LEDs illuminate, with no forced interface capture or security reduction.
 
-- Continue mapping the original driver's startup and firmware initialisation sequence.
-- Determine the relationship between the Mavericks and Linux handshake exchanges.
-- Resolve the clock-source and alternate-setting mappings.
-- Establish endpoint and stream-control behaviour from source or repeatable observation.
-- Keep confirmed facts separate from hypotheses.
+### Stage 2 — Core Audio input/output
 
-### Stage 3 — Prototype the selected transport
+After device initialisation is demonstrated:
 
-Only after the production transport and entitlement/ownership gates are resolved:
-- Build the smallest transport proof using ordinary, non-forcing access.
-- Begin with descriptor reads and other non-mutating operations.
-- Do not implement or send either firmware handshake until the Linux and Mavericks sequences are reconciled, the exact request is justified, and the user separately approves the hardware test.
-- Record exactly which interfaces and requests are used.
-- Keep the protocol core reusable across candidate transports.
+- Integrate the proven ordinary USB access into the standalone user-space application architecture.
+- Establish the supported Core Audio device-publication path.
+- Implement playback and capture, initially testing each direction independently.
+- Establish reliable buffering, timing and error handling.
+- Confirm genuine two-way audio I/O through macOS, not merely appearance in Audio MIDI Setup.
+- Do not claim success until real audio has been played and captured.
 
-### Stage 4 — Build the Core Audio path
+### Stage 3 — Universal Audio LUNA validation
 
-- Evaluate device and stream publication through the selected supported macOS audio API.
-- Implement input and output independently.
-- Verify buffer handling, sample formats and timing.
-- Do not claim audio support until real capture and playback are demonstrated.
+After Core Audio input and output both work:
 
-### Stage 5 — Validate device features
+- Select the Mbox 2 as LUNA's audio device.
+- Verify playback and recording.
+- Then validate supported sample formats, 44.1/48 kHz rates and internal/external clock behaviour as evidence permits.
 
-- Test 16-bit and 24-bit operation where supported.
-- Test 44.1 kHz and 48 kHz operation.
-- Investigate internal clocking and external S/PDIF synchronisation.
-- Distinguish device communication from actual clock lock.
-- Use Universal Audio LUNA as the initial DAW validation target once basic Core Audio operation is stable.
-
-### Stage 6 — Complete the configuration utility
+### Stage 4 — Complete the configuration utility
 
 The native macOS utility should eventually:
-- Show whether the Mbox 2 is detected and communicating.
-- Show clock source and lock state only when those states can be measured reliably.
+- Show whether the Mbox 2 is detected, initialised and communicating.
+- Show clock source and lock state only when measured reliably.
 - Expose supported sample-rate and format settings.
 - Remain focused on essential device configuration.
 
@@ -178,3 +150,13 @@ The exact request, returned bytes, parsing, and safety boundaries are recorded i
 - **Strong cross-check:** Interface 6 endpoints `0x02` OUT and `0x81` IN match the MIDI endpoints used by the Linux quirk. Endpoint `0x82` IN remains unexplained.
 - **Important caution:** Interface 0 has a DFU-related class/subclass identifier, but the seven-byte class-specific descriptor is not enough to claim a standard operational DFU interface.
 - **Not attempted:** No endpoint pipe or endpoint transfer, alternate-setting change, firmware request, USB reset, sample-rate operation or audio streaming was performed.
+
+
+### 21 November 2026 — standalone Host build and next-session boundary
+
+- **Confirmed locally:** The existing `Mbox2DriverHost` macOS application target was detached from its DriverKit target dependency and System Extensions embedding phase.
+- **Confirmed locally:** `plutil -lint` passed for the edited Xcode project file, the DriverKit target remained separate, and the Host target built successfully with Xcode 27.2 using `xcodebuild -target Mbox2DriverHost`.
+- **Important boundary:** This was a standalone application build. It did not integrate or re-run the already demonstrated USB discovery/interface-6 code, and it did not initialise the Mbox 2.
+- **Next:** Resume at Stage 1 above: reconcile and document the device initialisation sequence required for the all-LEDs-on milestone. Do not restart USB enumeration, Audio MIDI Setup visibility, descriptor reading or interface-6 attachment.
+
+See [Implementation foundation — 21 November 2026](implementation-foundation-2026-11-21.md) for the concise session handover.

@@ -2,7 +2,7 @@
 
 **An open-source effort to bring the original Digidesign mBox 2 USB audio interface back to life on modern macOS.**
 
-**Project status: Initial DriverKit extension and host-app build/packaging confirmed; AudioDriverKit/USBDriverKit architecture investigation underway.**
+**Project status: User-space implementation selected; USB discovery and interface-6 access demonstrated; device initialisation is the next milestone.**
 
 ## About the project
 
@@ -18,16 +18,28 @@ The Mbox 2 Mini, Mbox 2 Pro, Mbox 2 Micro and other family products are not assu
 
 ## Current status
 
-The project has completed substantial investigation of the original Mavericks driver, USB identification, firmware initialisation, USB interface layout and audio-format control. Development has also produced two hardware-independent foundations:
+The project has selected the **Eleven Rack-style user-space architecture** as its sole implementation path. DriverKit and kernel extensions are not fallback options.
 
-- A minimal DriverKit project scaffold that successfully compiled and packaged on Apple Silicon with Xcode 27.2.
-- A transport-independent C++17 protocol module with unit tests; the test suite passed in a clean Linux container.
+### Confirmed progress
 
-These milestones are **build and research results, not a functioning driver**. The DriverKit scaffold has not been signed with the required entitlements, installed, activated or tested against the Mbox 2. The protocol module does not communicate with USB hardware.
+- The original full-size Mbox 2 is identified as USB VID `0x0dba`, PID `0x3000`.
+- The device already appears in macOS Audio MIDI Setup. This confirms system enumeration, not working audio I/O.
+- Ordinary user-space USB discovery and descriptor reading have been demonstrated.
+- An `IOUSBHostInterface` object for interface 6 was successfully initialised using ordinary, non-capture access.
+- A standard read-only USB device-descriptor request returned all 18 bytes; the complete 646-byte configuration descriptor has also been read and analysed.
+- The existing Host application has been detached from its DriverKit dependency in the local working copy and its standalone macOS target has built successfully with Xcode 27.2. Publication of that project-file change is still pending.
+- The transport-independent C++ protocol work and legacy driver reverse-engineering remain available as supporting research.
 
-The current architecture investigation is comparing a properly entitled DriverKit route with a user-space USB engine and Core Audio AudioServerPlugIn approach. A separate Apple Silicon audio-driver project demonstrates that a user-space design can be built without a kernel extension, but its use of USB device-seize fallback is a significant safety concern and is not accepted as a solution for this project.
+### Immediate next milestone: initialise the Mbox 2
 
-**No working modern macOS driver, firmware handshake, audio capture or audio playback has yet been demonstrated.**
+Establish the correct two-way USB communication and device-initialisation sequence until all Mbox 2 LEDs illuminate. Reconcile the Mavericks driver handshake with the different Linux boot-status sequence before proposing any hardware request. No experimental vendor request or state-changing transfer is authorised by this status note.
+
+### Following milestones
+
+1. **Core Audio:** working playback and capture through macOS, independently of a DAW.
+2. **LUNA:** validate real input and output in Universal Audio LUNA after Core Audio operation is stable.
+
+**Not yet demonstrated:** device firmware initialisation, the all-LEDs-on state, USB audio streaming, Core Audio playback/capture, or LUNA operation.
 
 ## Security and system-integrity requirements
 
@@ -48,9 +60,9 @@ A build or local experiment is not automatically safe to install. Signing, notar
 ### Project planning
 
 - [Project goals](docs/project-goals.md) — intended hardware, functional aims and non-negotiable development principles.
-- [Development roadmap](docs/development-roadmap.md) — current status, candidate architectures and staged development plan.
-- [DriverKit scaffold status](docs/driverkit-scaffold-status.md) — what was built and packaged, and what remains untested.
-- [DriverKit prototype preparation](docs/driverkit-prototype-preparation.md) — the entitlement, signing and safe-activation gates; no security reduction is permitted.
+- [Development roadmap](docs/development-roadmap.md) — confirmed progress and the selected user-space implementation sequence.
+- [Implementation foundation — 21 November 2026](docs/implementation-foundation-2026-11-21.md) — session handover, established USB results, architecture decision and next device-initialisation milestone.
+- [Historical DriverKit scaffold status](docs/driverkit-scaffold-status.md) — retained as project history; DriverKit is not an active implementation or fallback path.
 
 ### Research notes
 
@@ -62,7 +74,7 @@ A build or local experiment is not automatically safe to install. Signing, notar
 - [19 November interface 6 endpoint discovery](research/modern-macos-interface-6-endpoint-discovery-2026-11-19.md) — read-only IOUSBLib endpoint-descriptor query; no interface open or endpoint transfers.
 - [Firmware handshake investigation](research/firmware-handshake.md) — identified handshake routines and unanswered questions.
 - [Sample-rate, clock and USB stream control](research/sample-rate-clock-control.md) — 44.1/48 kHz selection, USB endpoint requests, external-rate tracking, alternate settings and AC-3 topology.
-- [Modern DriverKit architecture](research/driverkit-architecture.md) — USBDriverKit and AudioDriverKit feasibility findings, Linux USB topology, and initialisation/control-request research.
+- [Historical DriverKit architecture research](research/driverkit-architecture.md) — retained for protocol and platform reference only; not an implementation route.
 
 ### Hardware notes
 
