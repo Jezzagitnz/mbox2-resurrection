@@ -16,16 +16,21 @@ The project continues exclusively with the **Eleven Rack-style user-space archit
 
 DriverKit is parked. It is not to be developed, investigated further, or treated as a fallback unless the project owner explicitly reopens the decision. Do not pursue SIP reduction, paid Apple Developer membership as a prerequisite for local development, kernel extensions, forced USB capture, or device seizure.
 
-The Eleven Rack Linux project is an architectural reference, not code to port wholesale. Its public README describes a Linux ALSA `snd-usb-audio` compatibility patch that reuses ALSA's audio, MIDI and mixer implementation. It also documents implicit-feedback stream synchronisation. Those are Linux-specific mechanisms; our macOS implementation must use the appropriate macOS USB and Core Audio facilities.
+The primary reference is [Matt Housley's Eleven Rack Driver](https://github.com/Matt-Housley/eleven-rack-driver), a working Apple Silicon macOS Core Audio driver (arm64; macOS 13+). Its architecture is directly relevant: a user-space USB engine, a Core Audio `AudioServerPlugIn` hosted by `coreaudiod`, a shared-memory ring between them, and a menu-bar application supervising the engine. Its source is written in C/C++ for the engine/plugin and Swift for the app. It is a reference implementation, not code to transplant unchanged; Mbox 2 USB descriptors, endpoints, firmware protocol, channel layout and clock behaviour differ.
 
-## Review of the Eleven Rack GitHub project
+The Linux [Elevenrack-driver-linux](https://github.com/kdbo/Elevenrack-driver-linux) repository is now secondary background material only. It was not the correct primary reference for our macOS architecture.
 
-Repository reviewed: https://github.com/kdbo/Elevenrack-driver-linux
+## Review of the Apple Silicon Eleven Rack GitHub project
 
-- README reviewed.
-- Pull request #1, “Fix/implicit feedback packet capacity”: closed; no issue-thread comments and no submitted PR reviews reported by GitHub.
-- Pull request #2, “Feat/tauri editor”: closed; no issue-thread comments and no submitted PR reviews reported by GitHub.
-- No additional replies were surfaced in those PR conversations. The repository README remains useful as architectural reference, but no new reply changed our design.
+Repository reviewed: https://github.com/Matt-Housley/eleven-rack-driver (README, release notes, engine, stream diagnostic, shared-ring header, Core Audio plug-in, and playback-dropout analysis).
+
+- The README documents Apple Silicon support, macOS 13+, 8-in/6-out operation, a user-space engine, an `AudioServerPlugIn`, and shared-memory audio transport.
+- The engine uses IOUSBLib (`IOUSBDeviceInterface500` / `IOUSBInterfaceInterface500`): ordinary `USBDeviceOpen()`, then a `USBDeviceOpenSeize()` fallback on `kIOReturnExclusiveAccess`; it sets configuration 1, opens selected interfaces, changes alternate settings, locates isochronous pipes and schedules asynchronous transfers.
+- **Do not copy the seize fallback.** The Mbox 2 project's no-forced-takeover constraint remains in force. Its existing interface-6 work used ordinary user-space `IOUSBHostInterface` attachment and must be extended without whole-device seizure.
+- The repository has two issues and no pull requests in the reviewed snapshot. Issue #2 asks about USB seize, SIP and signing (the question raised from our Mbox 2 work); there is no maintainer reply. Issue #1 reports an endpoint 0x83 transaction-error disconnect/recovery problem; there are no comments. Neither issue supplies a maintainer answer.
+- The repository's latest listed release is v1.1.0. It documents clock-source and Rig Input controls, while the source history records fixes and ongoing work around multi-client playback ring timing. This is useful engineering evidence: audio-ring timing and Core Audio IO-thread behaviour need deliberate validation, not just a device that appears in Audio MIDI Setup.
+
+
 
 ## Mbox 2 startup findings consolidated today
 
