@@ -33,6 +33,20 @@ The first target is the original full-size USB Digidesign Mbox 2 (USB VID `0x0db
 
 The Mbox 2 Mini, Mbox 2 Pro, Mbox 2 Micro and other Mbox-family products are not assumed to share the same hardware, firmware or driver behaviour. They are outside the initial implementation scope unless evidence and community contributions justify expanding it.
 
+## Selected implementation method
+
+The sole active implementation method is the **Eleven Rack-style user-space architecture**, adapted for macOS:
+
+- Ordinary user-space USB communication for device protocol and transport.
+- A transport-independent Mbox 2 protocol core.
+- A dedicated audio engine/transport path connected to Core Audio through the supported macOS audio plug-in architecture.
+- Shared-memory audio transport where appropriate to bridge the USB process and Core Audio component safely.
+- A small native macOS configuration utility for device status and supported settings.
+
+This is an architectural choice, not a claim that the complete implementation is already working. The exact process boundary, AudioServerPlugIn lifecycle, shared-memory design, permissions, signing and packaging still require implementation and validation.
+
+**DriverKit is parked and is not part of the current plan.** Do not continue DriverKit development, use it as a fallback, or spend time investigating it unless the project owner explicitly reopens that decision. The existing experimental scaffold is not the basis for future work.
+
 ## Non-negotiable security requirements
 
 The primary development Mac must retain **System Integrity Protection (SIP) enabled and normal Startup Security**.
@@ -59,8 +73,10 @@ Software signing, notarisation, permissions and installation risks must be asses
 - Respect the original licences and permissions of all third-party material.
 - Keep the original full-size Mbox 2 as the sole initial hardware target.
 
-## Current status
+## Current status — 22 November 2026
 
-The project has completed substantial reverse-engineering research and produced early, hardware-independent implementation foundations: a minimal DriverKit scaffold that compiled and packaged, and a transport-independent protocol module whose unit tests passed.
+The user-space architecture is selected. Ordinary USB discovery, interface-6 access and standard read-only descriptor transfers have been demonstrated on the modern Mac. The transport-independent protocol core exists and its hardware-independent tests have passed.
 
-Neither foundation is a functioning driver. DriverKit signing, entitlement approval, activation, USB communication, firmware initialisation, Core Audio operation and audio streaming remain unproven on the modern target.
+The next milestone is the first justified, explicitly approved bidirectional USB communication needed to initialise the Mbox 2 and reach its expected illuminated LED state. Only after that should work progress to genuine Core Audio input and output.
+
+No firmware initialisation, expected LED state, USB audio streaming, Core Audio input/output or LUNA operation has yet been demonstrated on the modern Mac. DriverKit work is parked and is not a project milestone or fallback.
