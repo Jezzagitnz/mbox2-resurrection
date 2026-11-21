@@ -12,9 +12,15 @@ Use these labels consistently:
 - **Open question** — not yet answered by available evidence.
 - **Not tested** — no test has yet been performed.
 
-## Current status — 21 November 2026
+## Current status — 22 November 2026
 
 The project has selected the **Eleven Rack-style user-space architecture** as its sole implementation path. DriverKit and kernel extensions are not fallback options.
+
+### 22 November clarification — startup evidence and next milestone
+
+The latest static review confirms the Mavericks driver's `FirmwareHandshake(false)` request is a one-byte vendor control read (`0xC0 / 0x85`, `wValue=1`, `wIndex=1`, `wLength=1`). A successful response containing `0x01` causes a 300 ms delay and retry, with up to 30 retries after the initial attempt. In the inspected `initHardware()` path, interface-rematching calls for interfaces 0 and 6 precede this handshake on the relevant branch; the concrete `RayDevice::CreateAudioEngines()` override follows successful setup.
+
+The Linux boot quirk uses the same request type/code but a distinct 18-byte request (`wIndex=0`, `wLength=18`) and a different response interpretation and polling schedule. These exchanges must remain separate until their relationship is established. A separate five-stage `DigiHandshake::Do` mechanism is present, but its stage operations and relationship to startup remain unresolved. The short 22 November review did not inspect those helper bodies because the user could not run the final command; do not record that analysis as complete.
 
 ### Completed and evidenced foundations
 
@@ -72,18 +78,18 @@ The protocol core must remain independent of the USB transport. The Mavericks dr
 
 ## Next development stages
 
-### Stage 1 — Device initialisation and LED milestone
+### Stage 1 — First bidirectional USB communication and device initialisation (LED milestone)
 
 This is the immediate next milestone. Discovery, Audio MIDI Setup visibility, descriptor reading and ordinary interface-6 attachment are already demonstrated; do not repeat them.
 
-- Continue static analysis of the Mavericks driver and Linux Mbox 2 startup path.
+- Continue only the specific static analysis needed to reconcile the Mavericks and Linux startup paths, including the unresolved five-stage `DigiHandshake::Do` helpers.
 - Reconcile the different handshake/status requests, their parameters, order, expected responses and retry behaviour.
 - Identify the complete initialisation sequence required to bring the Mbox 2 into its operational state.
 - Document each request and the evidence supporting it.
 - Do not send a firmware/vendor-specific or state-changing request until the sequence is reconciled, the exact test is justified, and the user explicitly approves it.
 - Success criterion: the device initialises and all expected Mbox 2 LEDs illuminate, with no forced interface capture or security reduction.
 
-### Stage 2 — Core Audio input/output
+### Stage 2 — Core Audio input/output (after the LED milestone)
 
 After device initialisation is demonstrated:
 
@@ -160,3 +166,17 @@ The exact request, returned bytes, parsing, and safety boundaries are recorded i
 - **Next:** Resume at Stage 1 above: reconcile and document the device initialisation sequence required for the all-LEDs-on milestone. Do not restart USB enumeration, Audio MIDI Setup visibility, descriptor reading or interface-6 attachment.
 
 See [Implementation foundation — 21 November 2026](implementation-foundation-2026-11-21.md) for the concise session handover.
+
+
+### 22 November 2026 — user-space architecture reaffirmed and startup evidence updated
+
+- **Decision reaffirmed:** The Eleven Rack-style user-space approach is the sole active architecture: ordinary user-space USB communication, a transport-independent Mbox 2 protocol core, a Core Audio integration component, and shared-memory audio transport where appropriate.
+- **Parked:** DriverKit is not to be developed, investigated further, or treated as a fallback unless the project owner explicitly reopens the decision.
+- **External project review:** The public [Eleven Rack Linux driver](https://github.com/kdbo/Elevenrack-driver-linux) README describes an ALSA `snd-usb-audio` compatibility patch that reuses the Linux audio/MIDI/mixer stack and documents implicit-feedback stream synchronisation. This is useful architectural reference only; its Linux code and ALSA mechanisms are not to be transplanted into the macOS project. The two visible pull requests (#1 and #2) are closed; GitHub reports no issue-thread comments or submitted reviews on either.
+- **Confirmed from existing Mavericks disassembly notes:** `FirmwareHandshake(false)` uses request `0xC0/0x85`, `wValue=1`, `wIndex=1`, `wLength=1`; response byte `0x01` triggers a 300 ms retry delay, up to 30 retries after the initial request.
+- **Confirmed from existing disassembly notes:** The relevant `initHardware()` branch attempts interface rematching for interface numbers 0 and 6, performs the one-byte handshake, and then calls the concrete `RayDevice::CreateAudioEngines()` override on the successful path. Static analysis does not establish the runtime outcome of those rematches.
+- **Confirmed distinction:** The Linux boot quirk's 18-byte `0xC0/0x85` exchange (`wIndex=0`) is not interchangeable with the Mavericks one-byte request.
+- **Open:** The separate five-stage `DigiHandshake::Do` routine remains unmapped. The planned short grep review was not completed in this session.
+- **Not attempted:** No vendor-specific or state-changing USB request, endpoint transfer, configuration/alternate-setting change, firmware initialisation or LED test was performed.
+- **Immediate milestone:** First justified and explicitly approved bidirectional USB communication sufficient to initialise the Mbox 2 and illuminate its expected LEDs.
+- **Following milestone:** Working Core Audio playback and capture, followed by LUNA validation.
