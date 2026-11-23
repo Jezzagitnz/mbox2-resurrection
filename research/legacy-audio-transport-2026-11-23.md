@@ -176,3 +176,14 @@ Next:
 2. Only after the sequence is reconciled, explain the exact first hardware request and obtain explicit user approval.
 3. Once initialisation is demonstrated, implement and test the modern user-space isochronous transport against the Mbox 2's actual endpoint/alternate-setting descriptors.
 4. Design the Core Audio shared transport with time/sample-position semantics where required by AudioServerPlugIn, rather than assuming a FIFO is sufficient.
+
+
+## 9. Modern macOS IOUSBLib SDK compatibility check
+
+A separate read-only inspection of the active macOS SDK header `IOKit.framework/Headers/usb/IOUSBLib.h` found that both `IOUSBInterfaceInterface192` and `IOUSBInterfaceInterface500` declare standard asynchronous isochronous read/write methods and low-latency isochronous read/write methods.
+
+The version-500 declaration also includes `LowLatencyCreateBuffer()`, `LowLatencyDestroyBuffer()`, `GetBusMicroFrameNumber()` and `GetFrameListTime()`. The header documents preallocated buffers/frame lists and an open-interface requirement for the low-latency path. Its `updateFrequency` documentation gives a 0–8 ms range, with zero meaning update on transfer completion. These are API facts, not Mbox 2 configuration recommendations.
+
+**Conclusion:** interface version 500 is not required solely to obtain low-latency isochronous methods; version 192 declares those methods too. Version 500 provides additional supporting buffer and timing APIs. See [Modern macOS IOUSBLib isochronous API compatibility](modern-macos-iousblib-isochronous-api-2026-11-23.md) for the full declaration-level findings and limitations.
+
+This does not resolve the legacy submission vtable methods or identify any Mbox 2 endpoint, interface mapping, alternate setting, packet size, queue depth, feedback unit or scheduling value. No runtime USB call or hardware transfer was made.
