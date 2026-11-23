@@ -12,7 +12,7 @@ Use these labels consistently:
 - **Open question** — not yet answered by available evidence.
 - **Not tested** — no test has yet been performed.
 
-## Current status — 22 November 2026
+## Current status — 23 November 2026
 
 The project has selected the **Eleven Rack-style user-space architecture** as its sole implementation path. DriverKit and kernel extensions are not fallback options.
 
@@ -42,6 +42,24 @@ The Linux boot quirk uses the same request type/code but a distinct 18-byte requ
 - Operation in Universal Audio LUNA.
 
 Audio MIDI Setup visibility, descriptor reads and a successful application build are not evidence of working audio.
+
+
+
+### 23 November 2026 — legacy audio transport mapped; Eleven Rack references rechecked
+
+- **Confirmed by static disassembly:** The legacy kStreamInterfaceE table contains four 12-byte records and the engine matches USB interface numbers 2, 3, 4 and 5 when creating audio interface services. These are the four Mbox 2 AudioStreaming interfaces already present in the parsed configuration descriptor.
+- **Confirmed by static disassembly:** CreateAudioInterface() maps selector 3 to AdaptiveRead, 4 to AdaptiveWrite, 5 to AsyncRead and 6 to AsyncWrite. The call sites that supply each selector have not yet been fully traced; do not assign a class to a specific endpoint from this mapping alone.
+- **Confirmed by static disassembly:** GetAlternateSettingInfo() searches 12 records in kAltInfoE with 28-byte stride, keyed by interface number and alternate-setting number, and copies a 28-byte structure. Remaining field meanings are open.
+- **Confirmed / strongly corroborated:** The legacy engine schedules stream start using the USB controller frame counter. Its target is current frame +2, with four-frame alignment for the asynchronous path; a worker waits for the target frame.
+- **Confirmed by static disassembly and symbols:** Audio uses IOUSBLowLatencyIsocFrame frame lists and separate asynchronous read/write submission and completion handlers. The inspected read submit path builds two frame records; the write path builds four and passes FeedbackData. The exact USB submission virtual methods remain unresolved.
+- **Confirmed:** The engine routes playback and capture through active interface services; the service TransferAudio() is a state-checking dispatcher, not the underlying USB transfer itself.
+- **Engineering implication:** the Mbox 2 transport needs separate isochronous input/output paths, queued frame lists/buffers, asynchronous completion handling, controller-frame scheduling where supported, and explicit feedback/packet-capacity handling. The old kernel API is not assumed to be directly available in modern user space.
+- **Apple Silicon Eleven Rack check:** source uses IOUSBLib asynchronous isochronous reads/writes and a version-7 shared ring. Capture uses an SPSC FIFO; playback is time-addressed using Core Audio output sample time. This is a key AudioServerPlugIn lesson: a simple append-only playback FIFO may fail under multi-client WriteMix scheduling. Its engine's USBDeviceOpenSeize() fallback remains prohibited for Mbox 2 and must not be copied.
+- **Apple Silicon Eleven Rack discussion check:** issues #1 and #2 still have no comments or maintainer replies; no public PR was found. The playback-dropout analysis document's status line appears stale relative to the current source's time-addressed playback ring; treat this as a documentation inconsistency pending upstream confirmation.
+- **Linux Eleven Rack check:** PR #1 (implicit-feedback packet capacity) and PR #2 (Tauri editor) are merged, with no PR comments or review submissions. The Linux project documents device-specific descriptor bounds, playback packet normalization, a 2 ms playback lead and delayed USB completion/giveback investigations. Its current latest visible activity is editor/manual work and a 0.1.2 release candidate, not a new audio transport result.
+- **Important separation:** Eleven Rack's USB ID is 0dba:b011, not Mbox 2's 0dba:3000. Do not copy its endpoint numbers, channel arithmetic, feedback assumptions, packet ceilings or playback lead. Transfer only general engineering lessons and validate against Mbox 2 evidence.
+- **Not attempted:** no vendor-specific/state-changing USB request, SET_CONFIGURATION, SET_INTERFACE, pipe submission, endpoint transfer, audio stream, firmware initialisation or LED test.
+- Full evidence and links: [23 November session record](session-record-2026-11-23.md) and [legacy audio transport analysis](../research/legacy-audio-transport-2026-11-23.md).
 
 ## Non-negotiable security boundary
 
