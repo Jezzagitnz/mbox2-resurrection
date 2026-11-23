@@ -109,3 +109,8 @@ The existing `protocol/include/mbox2/protocol.hpp` and `protocol/tests/protocol_
 No protocol source or test change was justified: the supplied implementation already represents the known facts without assigning an unproven meaning to the Mavericks Boolean or combining the two request variants. No new transport behaviour or hardware-specific mapping was added. The existing protocol test suite was not rerun as part of this documentation-only SDK review.
 
 No USB hardware operation was performed.
+
+
+## Follow-up: local build confirmation
+
+After the documentation review, the user confirmed that the latest build in the active `mbox2-userspace` checkout completed successfully. Xcode printed `** BUILD SUCCEEDED **`, and the shell reported exit status `0`. This records a successful build only; no additional test-suite run or hardware operation is implied.
