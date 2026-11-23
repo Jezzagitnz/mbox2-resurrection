@@ -73,10 +73,10 @@ Software signing, notarisation, permissions and installation risks must be asses
 - Respect the original licences and permissions of all third-party material.
 - Keep the original full-size Mbox 2 as the sole initial hardware target.
 
-## Current status — 22 November 2026
+## Current status — 23 November 2026
 
-The user-space architecture is selected. Ordinary USB discovery, interface-6 access and standard read-only descriptor transfers have been demonstrated on the modern Mac. The transport-independent protocol core exists and its hardware-independent tests have passed.
+The user-space architecture remains the sole active path. Ordinary USB discovery, interface-6 access and standard read-only descriptor transfers have already been demonstrated on the modern Mac; the transport-independent protocol core and its hardware-independent tests are in place.
 
-The next milestone is the first justified, explicitly approved bidirectional USB communication needed to initialise the Mbox 2 and reach its expected illuminated LED state. Only after that should work progress to genuine Core Audio input and output.
+Static analysis of the Mavericks driver now maps the four audio-stream interface numbers (2–5), the asynchronous/adaptive transfer-class factory, controller-frame-based stream start scheduling, and the low-latency isochronous frame-list paths. The read and write paths use separate frame-list routines; the write path passes FeedbackData. The exact legacy USB submission virtual methods and several table fields remain unresolved. See [the 23 November transport analysis](../research/legacy-audio-transport-2026-11-23.md).
 
-No firmware initialisation, expected LED state, USB audio streaming, Core Audio input/output or LUNA operation has yet been demonstrated on the modern Mac. DriverKit work is parked and is not a project milestone or fallback.
+The immediate milestone remains a fully reconciled and explicitly approved device-initialisation test leading to the expected Mbox 2 LED state. Core Audio playback/capture and LUNA validation remain later milestones. No firmware initialisation, LED test, USB endpoint transfer, audio streaming, Core Audio input/output or LUNA operation has been demonstrated on the modern Mac.
