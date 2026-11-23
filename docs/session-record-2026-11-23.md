@@ -92,3 +92,20 @@ No vendor-specific or state-changing USB request was sent. No SET_CONFIGURATION,
 3. Explain the exact request, expected response, retry/timeout behaviour and safe stopping conditions; obtain explicit user approval before any vendor-specific or state-changing USB request.
 4. After the LED/initialisation milestone, implement the user-space isochronous transport using the actual Mbox 2 descriptors and verified modern USB APIs.
 5. Design and test the Core Audio shared transport with correct IO-cycle sample-time semantics and multi-client playback behaviour.
+
+
+## Modern macOS SDK isochronous API compatibility check
+
+A read-only inspection of the active Xcode macOS SDK's `IOKit.framework/Headers/usb/IOUSBLib.h` confirmed that both `IOUSBInterfaceStruct192` and `IOUSBInterfaceStruct500` declare standard asynchronous isochronous read/write methods and low-latency isochronous read/write methods.
+
+The version-500 declaration additionally exposes `LowLatencyCreateBuffer()`, `LowLatencyDestroyBuffer()`, `GetBusMicroFrameNumber()`, `GetFrameListTime()` and `GetIOUSBLibVersion()`. The header documents preallocated low-latency buffers/frame lists, an open-interface requirement, and an `updateFrequency` range of 0–8 ms (zero means update on transfer completion). It defines write/read/frame-list buffer type constants as 0/1/2.
+
+**Conclusion:** low-latency method availability alone does not require interface version 500, because version 192 also declares low-latency read/write methods. Version 500 has additional supporting APIs. This is SDK declaration evidence only; it does not establish runtime success or any Mbox 2 endpoint, alternate-setting, packet, feedback or scheduling value. See [Modern macOS IOUSBLib isochronous API compatibility](../research/modern-macos-iousblib-isochronous-api-2026-11-23.md).
+
+## Protocol foundation review
+
+The existing `protocol/include/mbox2/protocol.hpp` and `protocol/tests/protocol_tests.cpp` were reviewed against the supplied terminal output. They already keep the Mavericks one-byte firmware handshake separate from the Linux 18-byte boot-status request, preserve their different parameters and retry/poll timing, test the Mavericks response-byte acceptance rule and Linux status parsing, and record the explicit 44.1/48 kHz table entries.
+
+No protocol source or test change was justified: the supplied implementation already represents the known facts without assigning an unproven meaning to the Mavericks Boolean or combining the two request variants. No new transport behaviour or hardware-specific mapping was added. The existing protocol test suite was not rerun as part of this documentation-only SDK review.
+
+No USB hardware operation was performed.
