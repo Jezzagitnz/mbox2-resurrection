@@ -96,17 +96,17 @@ Further disassembly of the x86_64 binary identified the following methods in `Ma
 | `UsbResetDevice` | `0x526e` |
 | `UsbReEnumerateDevice` | `0x5290` |
 
-The `initHardware` disassembly shows model identification (standard, Academic, Mini and Micro paths), USB-provider acquisition, retrieval of a USB-related object, reading of its `bcdDevice` property, and calls into further virtual methods and `FirmwareHandshake(false)`. The virtual method identities and all startup branch semantics are not yet resolved.
+The `initHardware` disassembly shows model identification (standard, Academic, Mini and Micro paths), USB-provider acquisition, retrieval of a USB-related object, reading of its `bcdDevice` property, and calls into further virtual methods and `FirmwareHandshake(false)`. The 25 November 2026 vtable analysis below resolves the device virtual methods and documents the observed branch order; provider-method semantics and runtime success remain open.
 
 The Mavericks `FirmwareHandshake(bool)` routine issues a vendor control request with `bmRequestType=0xC0`, `bRequest=0x85`, `wValue=argument+1`, `wIndex=1`, and `wLength=1`. It retries when a successful response contains byte value `1`, sleeping 300 ms between attempts, for up to 30 retries after the initial request.
 
 The class also contains USB configuration, interface-rematching, reset and re-enumeration helper methods. Their provider virtual calls have been mapped, but the exact IOKit method identities and their callers remain under investigation.
 
-See [Firmware handshake investigation](firmware-handshake.md) for the fuller instruction-level record, the comparison with the distinct Linux 18-byte boot-status request, and the unresolved vtable questions.
+See [Firmware handshake investigation](firmware-handshake.md) for the fuller instruction-level record, the comparison with the distinct Linux 18-byte boot-status request, and the resolved device-vtable mapping.
 
 ### Evidence status
 
-These findings come from disassembly and symbol inspection of the Mavericks x86_64 kernel extension. They describe code structure and request fields; they do not yet prove the exact runtime sequence for every hardware revision. The device-class vtable dump is still unresolved and must not be used to assign method names until its relocation/layout is understood.
+These findings come from disassembly, symbol inspection and raw vtable inspection of the Mavericks x86_64 kernel extension. They describe code structure and request fields; they do not prove the exact runtime sequence or successful outcome for every hardware revision. Device-vtable slot assignments are resolved in the 25 November section below using the Itanium ABI address point.
 
 
 ## Device vtable and complete initHardware resolution (25 November 2026)
