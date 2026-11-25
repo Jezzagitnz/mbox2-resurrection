@@ -49,7 +49,7 @@ The disassembly of `MaudioShDrRayUsbDevice::initHardware()` at `0x4da4` shows th
 10. Calls a device virtual method at offset `0xa38` with argument `0`. Depending on its result, the code may call the same method with argument `6`, then invokes `FirmwareHandshake(false)`.
 11. On the successful path following the handshake, invokes another device virtual method at offset `0xa20`.
 
-The virtual method identities have now been resolved against the concrete `RayDevice` vtable. The Itanium ABI vtable address point is 16 bytes after the vtable symbol. For `RayDevice`, the symbol is at `0x272e0` and the address point is `0x272f0`; therefore the call at vtable byte offset `0xa38` targets `UsbRematchInterface(unsigned char)` at `0x51b2`, while offset `0xa20` targets the `RayDevice::CreateAudioEngines()` override at `0xc9ca`. The calls in `initHardware()` with arguments 0 and 6 are consequently interface-rematching attempts, followed by the firmware handshake and (on the successful path) audio-engine creation. The earlier `0xa30` call is a separate operation and remains to be identified.
+The virtual method identities have now been resolved against the concrete RayDevice vtable, including the previously unknown +0xa30 call. The Itanium ABI vtable address point is 16 bytes after the vtable symbol. For RayDevice, the symbol is at 0x272e0 and the address point is 0x272f0. Consequently, +0xa30 targets UsbSetConfiguration(unsigned char, bool) at 0x5118; +0xa38 targets UsbRematchInterface(unsigned char) at 0x51b2; and +0xa20 targets the RayDevice::CreateAudioEngines() override at 0xc9ca. The arguments at the call sites match the method signatures: configuration (1, false), interface rematching (0) and conditionally (6), then audio-engine creation with no explicit arguments.
 
 ## FirmwareHandshake: confirmed USB request
 
@@ -100,9 +100,9 @@ The exact underlying IOKit method names and the circumstances in which these hel
 
 ## Vtable investigation status
 
-The symbol table places the `MaudioShDrRayUsbDevice` vtable at `0x20ee0`; its Itanium ABI address point is `0x20ef0`. The base-class slot at `+0xa20` resolves to the stub `CreateAudioEngines()` at `0x547a`, while `+0xa38` resolves to `UsbRematchInterface()` at `0x51b2`.
+The symbol table places the MaudioShDrRayUsbDevice vtable at 0x20ee0; its Itanium ABI address point is 0x20ef0. Its +0xa20 slot resolves to the base stub CreateAudioEngines() at 0x547a (which simply returns 0xe00002bc); its +0xa30 slot resolves to UsbSetConfiguration() at 0x5118; and its +0xa38 slot resolves to UsbRematchInterface() at 0x51b2.
 
-The concrete `RayDevice` vtable symbol is at `0x272e0`, with address point `0x272f0`. Its corresponding `+0xa20` slot points to `RayDevice::CreateAudioEngines()` at `0xc9ca`, overriding the base stub. Its `+0xa38` slot points to `UsbRematchInterface()` at `0x51b2`. This resolves the relevant virtual calls in `initHardware()` without relying on the base-class table alone.
+The concrete RayDevice vtable symbol is at 0x272e0, with address point 0x272f0. Its +0xa20 slot points to RayDevice::CreateAudioEngines() at 0xc9ca, overriding the base stub. Its +0xa30 and +0xa38 slots point to UsbSetConfiguration() at 0x5118 and UsbRematchInterface() at 0x51b2, respectively. The address-point adjustment is essential: indexing from the vtable symbol itself would misassign the slots.
 
 ## Comparison with Linux boot quirk
 
@@ -132,7 +132,7 @@ The relationship between these two handshake mechanisms, and the exact meaning o
 ## Important unanswered questions
 
 - What are the concrete method identities behind the provider vtable offsets used above?
-- Which startup branches call `UsbSetConfiguration`, `UsbRematchInterface`, reset or re-enumeration?
+- Which startup branches call reset or re-enumeration, and what are the concrete provider/interface methods behind those helper calls?
 - What does the one-byte response value `1` represent in the Mavericks routine?
 - How does the Mavericks request relate to the Linux 18-byte boot-status protocol?
 - What USB operations occur in each of the five `DigiHandshake::Do` stages?
@@ -143,12 +143,11 @@ The legacy utility's green “locked” indicator must not currently be describe
 
 ## Next steps
 
-1. Decode the device and provider vtables, including relocation information, before assigning method names.
-2. Resolve the virtual calls in `initHardware()`.
-3. Trace callers of the USB lifecycle helper methods.
-4. Examine each `DigiHandshake::Do` stage helper and its callers.
-5. Map the resulting operations to runtime behaviour on the known-working Mavericks reference system.
-6. Record the exact binary version and hash alongside any conclusions.
+1. Resolve the provider and interface vtable methods used inside UsbSetConfiguration() and UsbRematchInterface().
+2. Trace callers of UsbResetDevice() and UsbReEnumerateDevice() and determine whether either participates in startup.
+3. Examine each DigiHandshake::Do stage helper and its callers, keeping it distinct from the USB firmware request.
+4. Map the resulting operations to runtime behaviour on the known-working Mavericks reference system.
+5. Record the exact binary version and hash alongside any conclusions.
 
 
 ## 6 November 2026 update — resolved device vtable calls
@@ -163,3 +162,47 @@ The `RayDevice` vtable dump and symbol table establish the concrete targets of t
 The Itanium ABI address point is 16 bytes after the vtable symbol. `RayDevice`'s vtable symbol is `0x272e0`, address point `0x272f0`; the two slots are therefore at `0x27d28` and `0x27d10`, respectively. The base class has a stub `CreateAudioEngines()` at `0x547a`, but the derived `RayDevice` overrides it at `0xc9ca`.
 
 This confirms that `initHardware()` attempts to rematch USB interface numbers 0 and 6 through the same virtual method, performs `FirmwareHandshake(false)` on the relevant path, and calls the concrete audio-engine creation override after successful setup. The earlier `+0xa30` virtual operation remains unidentified. Static disassembly does not yet prove the runtime outcome of either rematch.
+
+
+## 25 November 2026 update — complete initHardware vtable resolution
+
+A fresh read-only disassembly of initHardware() (0x4da4 through 0x4fc5), the symbol table, and raw vtable entries on the Mavericks reference system resolved all three relevant virtual calls.
+
+### Correct slot mapping
+
+The Itanium C++ ABI vtable address point is 16 bytes after the vtable symbol. For RayDevice, the symbol is 0x272e0 and the address point is 0x272f0. The raw 64-bit entries were read around 0x27d00; the relevant function pointers are:
+
+| Virtual byte offset from address point | Vtable entry address | Function pointer | Resolved method |
+|---|---:|---:|---|
+| +0xa20 | 0x27d10 | 0xc9ca | RayDevice::CreateAudioEngines() |
+| +0xa28 | 0x27d18 | 0x506e | MaudioShDrRayUsbDevice::performStop() |
+| +0xa30 | 0x27d20 | 0x5118 | MaudioShDrRayUsbDevice::UsbSetConfiguration(unsigned char, bool) |
+| +0xa38 | 0x27d28 | 0x51b2 | MaudioShDrRayUsbDevice::UsbRematchInterface(unsigned char) |
+
+The base-class vtable at symbol 0x20ee0 has address point 0x20ef0. Its +0xa20 entry points to 0x547a, the base CreateAudioEngines() stub, which simply returns 0xe00002bc. RayDevice overrides this slot with the real implementation at 0xc9ca.
+
+**Correction to the earlier working interpretation:** the +0xa30 call is not audio-engine creation. The previous raw-table reading treated the vtable symbol as the address point and missed the ABI's 16-byte prefix. With the address point applied, +0xa30 is UsbSetConfiguration(1, false). Audio-engine creation is the later +0xa20 call.
+
+### Startup control flow established by the disassembly
+
+1. After model identification and property publication, initHardware() calls UsbSetConfiguration(1, false).
+2. The return value is checked. A non-zero result takes an error return path after calling FirmwareHandshake(false); a zero result continues.
+3. The driver obtains the USB-related object, reads its bcdDevice property, and calls UsbRematchInterface(0).
+4. If that call returns zero, it next calls UsbRematchInterface(6).
+5. It then calls FirmwareHandshake(false).
+6. If the second rematch returned zero, the driver invokes RayDevice::CreateAudioEngines() at 0xc9ca.
+7. The function's return status is based on the relevant operation's return value; static disassembly does not prove that every branch succeeds on every device/firmware revision.
+
+The disassembly therefore establishes the intended ordering of configuration, interface rematching, firmware polling, and audio-engine creation. It does not establish that the Mavericks and Linux vendor requests are consecutive stages, nor does it prove the runtime result of any step on the modern macOS implementation.
+
+### Evidence and safety boundary
+
+- The inspected original driver on the Mac mini was 434,424 bytes, dated 4 October 2014, SHA-256:
+  7dd2fb0d19b80aa3615aa72866c00a98345fbc6e3e375e70d9cbca6411539f9d.
+- This was static inspection of the existing binary and its symbol/vtable data.
+- No Mbox vendor control request, configuration change, interface rematch, reset, re-enumeration, or endpoint transfer was sent by this investigation.
+- No security settings or system services were changed.
+
+### Next investigation
+
+Inspect the implementation of UsbSetConfiguration() at 0x5118 and resolve the provider virtual calls it makes. Then trace the concrete provider methods and establish exactly what configuration value 1 and Boolean false cause the original driver to request. Continue to treat all hardware operations as unauthorised until each proposed request is described and explicitly approved by the user.
