@@ -25,9 +25,11 @@ The project has selected the **Eleven Rack-style user-space architecture** as it
 - The original full-size Mbox 2 is identified as USB VID `0x0dba`, PID `0x3000`.
 - The device already appears in macOS Audio MIDI Setup. This confirms system enumeration, not working audio I/O.
 - Ordinary user-space USB discovery and descriptor reading have been demonstrated.
-- An `IOUSBHostInterface` object for interface 6 was successfully initialised using ordinary, non-capture access.
-- A standard read-only USB device-descriptor request returned all 18 bytes; the complete 646-byte configuration descriptor has also been read and analysed.
-- The existing Host application has been detached from its DriverKit dependency in the local working copy and its standalone macOS target has built successfully with Xcode 27.2. Publication of that project-file change is still pending.
+- The complete 646-byte configuration descriptor has been read and analysed.
+- **Confirmed on hardware, 25 November:** the app successfully obtains the IOUSBLib device interface, enumerates USB interfaces, matches interface number 6, and opens interface 6 using ordinary non-seizing access.
+- The working interface-6 path uses an Objective-C bridge for native IOUSBLib function-pointer calls and Swift for discovery and interface matching. This avoids the Swift function-pointer crash encountered during interface-iterator creation.
+- The app built successfully with Xcode 27.2, launched, and reported: “Mbox 2 interface 6 was successfully initialised.”
+- The source/project implementation for this latest milestone is committed locally as `8f809b3` on `userspace-foundation`. That local implementation commit was not present on the GitHub remote when the 25 November session record was prepared; see that record for the exact files and publication boundary.
 - The transport-independent C++ protocol work and legacy driver reverse-engineering remain available as supporting research.
 
 ### Immediate next milestone: initialise the Mbox 2
@@ -39,7 +41,7 @@ Establish the correct two-way USB communication and device-initialisation sequen
 1. **Core Audio:** working playback and capture through macOS, independently of a DAW.
 2. **LUNA:** validate real input and output in Universal Audio LUNA after Core Audio operation is stable.
 
-**Not yet demonstrated:** device firmware initialisation, the all-LEDs-on state, USB audio streaming, Core Audio playback/capture, or LUNA operation.
+**Not yet demonstrated:** firmware/device initialisation, the all-LEDs-on state, USB audio streaming, Core Audio playback/capture, or LUNA operation.
 
 ## Security and system-integrity requirements
 
@@ -62,6 +64,7 @@ A build or local experiment is not automatically safe to install. Signing, notar
 - [Project goals](docs/project-goals.md) — intended hardware, functional aims and non-negotiable development principles.
 - [Development roadmap](docs/development-roadmap.md) — confirmed progress and the selected user-space implementation sequence.
 - [Implementation foundation — 21 November 2026](docs/implementation-foundation-2026-11-21.md) — session handover, established USB results, architecture decision and next device-initialisation milestone.
+- [25 November session record](docs/session-record-2026-11-25.md) — successful IOUSBLib interface-6 opening, implementation structure, build/test result, local commit boundary and next protocol-reconciliation task.
 - [Historical DriverKit scaffold status](docs/driverkit-scaffold-status.md) — retained as project history; DriverKit is not an active implementation or fallback path.
 
 ### Research notes
