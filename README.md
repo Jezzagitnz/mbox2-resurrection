@@ -64,7 +64,8 @@ A build or local experiment is not automatically safe to install. Signing, notar
 - [Project goals](docs/project-goals.md) — intended hardware, functional aims and non-negotiable development principles.
 - [Development roadmap](docs/development-roadmap.md) — confirmed progress and the selected user-space implementation sequence.
 - [Implementation foundation — 21 November 2026](docs/implementation-foundation-2026-11-21.md) — session handover, established USB results, architecture decision and next device-initialisation milestone.
-- [25 November session record](docs/session-record-2026-11-25.md) — successful IOUSBLib interface-6 opening, implementation structure, build/test result, local commit boundary and next protocol-reconciliation task.
+- [25 November session record](docs/session-record-2026-11-25.md) — successful IOUSBLib interface-6 opening, implementation structure, build/test result and local commit boundary.
+- [25 November reverse-engineering continuation](docs/session-record-2026-11-25-initHardware-analysis.md) — corrected RayDevice vtable address-point calculation and complete initHardware call mapping.
 - [Historical DriverKit scaffold status](docs/driverkit-scaffold-status.md) — retained as project history; DriverKit is not an active implementation or fallback path.
 
 ### Research notes
@@ -76,7 +77,7 @@ A build or local experiment is not automatically safe to install. Signing, notar
 - [18 November hardware detection session](research/hardware-detection-session-2026-11-18.md) — application detection result, unchanged hardware indicators and pending USB-B to USB-C cable test.
 - [19 November interface 6 endpoint discovery](research/modern-macos-interface-6-endpoint-discovery-2026-11-19.md) — read-only IOUSBLib endpoint-descriptor query; no interface open or endpoint transfers.
 - [Modern macOS IOUSBLib isochronous API compatibility](research/modern-macos-iousblib-isochronous-api-2026-11-23.md) — SDK declaration review of standard and low-latency asynchronous isochronous APIs; no hardware transfer.
-- [Firmware handshake investigation](research/firmware-handshake.md) — identified handshake routines and unanswered questions.
+- [Firmware handshake investigation](research/firmware-handshake.md) — Mavericks/Linux request comparison, full initHardware vtable resolution and next provider-method analysis.
 - [Sample-rate, clock and USB stream control](research/sample-rate-clock-control.md) — 44.1/48 kHz selection, USB endpoint requests, external-rate tracking, alternate settings and AC-3 topology.
 - [Historical DriverKit architecture research](research/driverkit-architecture.md) — retained for protocol and platform reference only; not an implementation route.
 
