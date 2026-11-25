@@ -161,7 +161,7 @@ The `RayDevice` vtable dump and symbol table establish the concrete targets of t
 
 The Itanium ABI address point is 16 bytes after the vtable symbol. `RayDevice`'s vtable symbol is `0x272e0`, address point `0x272f0`; the two slots are therefore at `0x27d28` and `0x27d10`, respectively. The base class has a stub `CreateAudioEngines()` at `0x547a`, but the derived `RayDevice` overrides it at `0xc9ca`.
 
-This confirms that `initHardware()` attempts to rematch USB interface numbers 0 and 6 through the same virtual method, performs `FirmwareHandshake(false)` on the relevant path, and calls the concrete audio-engine creation override after successful setup. The earlier `+0xa30` virtual operation remains unidentified. Static disassembly does not yet prove the runtime outcome of either rematch.
+This confirms that `initHardware()` attempts to rematch USB interface numbers 0 and 6 through the same virtual method, performs `FirmwareHandshake(false)` on the relevant path, and calls the concrete audio-engine creation override after successful setup. At the time of this historical 6 November note, the `+0xa30` operation had not yet been identified. The 25 November update below resolves it as `UsbSetConfiguration(1, false)`. Static disassembly does not prove the runtime outcome of either rematch.
 
 
 ## 25 November 2026 update — complete initHardware vtable resolution
