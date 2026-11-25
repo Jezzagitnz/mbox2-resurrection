@@ -96,14 +96,37 @@ Further disassembly of the x86_64 binary identified the following methods in `Ma
 | `UsbResetDevice` | `0x526e` |
 | `UsbReEnumerateDevice` | `0x5290` |
 
-The `initHardware` disassembly shows model identification (standard, Academic, Mini and Micro paths), USB-provider acquisition, retrieval of a USB-related object, reading of its `bcdDevice` property, and calls into further virtual methods and `FirmwareHandshake(false)`. The virtual method identities and all startup branch semantics are not yet resolved.
+The `initHardware` disassembly shows model identification (standard, Academic, Mini and Micro paths), USB-provider acquisition, retrieval of a USB-related object, reading of its `bcdDevice` property, and calls into further virtual methods and `FirmwareHandshake(false)`. The 25 November 2026 vtable analysis below resolves the device virtual methods and documents the observed branch order; provider-method semantics and runtime success remain open.
 
 The Mavericks `FirmwareHandshake(bool)` routine issues a vendor control request with `bmRequestType=0xC0`, `bRequest=0x85`, `wValue=argument+1`, `wIndex=1`, and `wLength=1`. It retries when a successful response contains byte value `1`, sleeping 300 ms between attempts, for up to 30 retries after the initial request.
 
 The class also contains USB configuration, interface-rematching, reset and re-enumeration helper methods. Their provider virtual calls have been mapped, but the exact IOKit method identities and their callers remain under investigation.
 
-See [Firmware handshake investigation](firmware-handshake.md) for the fuller instruction-level record, the comparison with the distinct Linux 18-byte boot-status request, and the unresolved vtable questions.
+See [Firmware handshake investigation](firmware-handshake.md) for the fuller instruction-level record, the comparison with the distinct Linux 18-byte boot-status request, and the resolved device-vtable mapping.
 
 ### Evidence status
 
-These findings come from disassembly and symbol inspection of the Mavericks x86_64 kernel extension. They describe code structure and request fields; they do not yet prove the exact runtime sequence for every hardware revision. The device-class vtable dump is still unresolved and must not be used to assign method names until its relocation/layout is understood.
+These findings come from disassembly, symbol inspection and raw vtable inspection of the Mavericks x86_64 kernel extension. They describe code structure and request fields; they do not prove the exact runtime sequence or successful outcome for every hardware revision. Device-vtable slot assignments are resolved in the 25 November section below using the Itanium ABI address point.
+
+
+## Device vtable and complete initHardware resolution (25 November 2026)
+
+A further read-only disassembly and raw vtable inspection resolved the three device virtual calls made by MaudioShDrRayUsbDevice::initHardware(). The relevant Itanium ABI address point is 16 bytes after each vtable symbol.
+
+For the concrete RayDevice object, the vtable symbol is 0x272e0 and the address point is 0x272f0:
+
+| Virtual slot | Function address | Method |
+|---|---:|---|
+| +0xa20 | 0xc9ca | RayDevice::CreateAudioEngines() |
+| +0xa30 | 0x5118 | UsbSetConfiguration(unsigned char, bool) |
+| +0xa38 | 0x51b2 | UsbRematchInterface(unsigned char) |
+
+The base-class vtable symbol is 0x20ee0, with address point 0x20ef0. Its +0xa20 entry points to 0x547a, a stub that returns 0xe00002bc; the concrete RayDevice override at 0xc9ca is the actual audio-engine creation routine.
+
+The initHardware() call site passes 1, 0 to +0xa30, matching UsbSetConfiguration(1, false). It passes 0 and conditionally 6 to +0xa38, matching interface-rematching calls. The later +0xa20 call is the real audio-engine creation call. This corrects the earlier provisional interpretation that +0xa30 was audio-engine creation: that interpretation omitted the ABI's 16-byte vtable address-point prefix.
+
+The disassembly's branch checks treat a zero return from configuration and interface-rematching operations as the path to continue. After the relevant rematching path, the driver calls FirmwareHandshake(false), then creates audio engines if the second rematch status permits it. This is static control-flow evidence, not proof of successful runtime execution for every device revision.
+
+The original binary inspected on the Mavericks reference system was 434,424 bytes, dated 4 October 2014, SHA-256 7dd2fb0d19b80aa3615aa72866c00a98345fbc6e3e375e70d9cbca6411539f9d.
+
+No hardware vendor request or state-changing USB operation was sent. The next static-analysis target is the implementation of UsbSetConfiguration() at 0x5118, especially the provider virtual methods it invokes.
