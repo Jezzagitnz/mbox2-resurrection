@@ -12,9 +12,15 @@ Use these labels consistently:
 - **Open question** — not yet answered by available evidence.
 - **Not tested** — no test has yet been performed.
 
-## Current status — 21 November 2026
+## Current status — 23 November 2026
 
 The project has selected the **Eleven Rack-style user-space architecture** as its sole implementation path. DriverKit and kernel extensions are not fallback options.
+
+### 22 November clarification — startup evidence and next milestone
+
+The latest static review confirms the Mavericks driver's `FirmwareHandshake(false)` request is a one-byte vendor control read (`0xC0 / 0x85`, `wValue=1`, `wIndex=1`, `wLength=1`). A successful response containing `0x01` causes a 300 ms delay and retry, with up to 30 retries after the initial attempt. In the inspected `initHardware()` path, interface-rematching calls for interfaces 0 and 6 precede this handshake on the relevant branch; the concrete `RayDevice::CreateAudioEngines()` override follows successful setup.
+
+The Linux boot quirk uses the same request type/code but a distinct 18-byte request (`wIndex=0`, `wLength=18`) and a different response interpretation and polling schedule. These exchanges must remain separate until their relationship is established. A separate five-stage `DigiHandshake::Do` mechanism is present, but its stage operations and relationship to startup remain unresolved. The short 22 November review did not inspect those helper bodies because the user could not run the final command; do not record that analysis as complete.
 
 ### Completed and evidenced foundations
 
@@ -36,6 +42,24 @@ The project has selected the **Eleven Rack-style user-space architecture** as it
 - Operation in Universal Audio LUNA.
 
 Audio MIDI Setup visibility, descriptor reads and a successful application build are not evidence of working audio.
+
+
+
+### 23 November 2026 — legacy audio transport mapped; Eleven Rack references rechecked
+
+- **Confirmed by static disassembly:** The legacy kStreamInterfaceE table contains four 12-byte records and the engine matches USB interface numbers 2, 3, 4 and 5 when creating audio interface services. These are the four Mbox 2 AudioStreaming interfaces already present in the parsed configuration descriptor.
+- **Confirmed by static disassembly:** CreateAudioInterface() maps selector 3 to AdaptiveRead, 4 to AdaptiveWrite, 5 to AsyncRead and 6 to AsyncWrite. The call sites that supply each selector have not yet been fully traced; do not assign a class to a specific endpoint from this mapping alone.
+- **Confirmed by static disassembly:** GetAlternateSettingInfo() searches 12 records in kAltInfoE with 28-byte stride, keyed by interface number and alternate-setting number, and copies a 28-byte structure. Remaining field meanings are open.
+- **Confirmed / strongly corroborated:** The legacy engine schedules stream start using the USB controller frame counter. Its target is current frame +2, with four-frame alignment for the asynchronous path; a worker waits for the target frame.
+- **Confirmed by static disassembly and symbols:** Audio uses IOUSBLowLatencyIsocFrame frame lists and separate asynchronous read/write submission and completion handlers. The inspected read submit path builds two frame records; the write path builds four and passes FeedbackData. The exact USB submission virtual methods remain unresolved.
+- **Confirmed:** The engine routes playback and capture through active interface services; the service TransferAudio() is a state-checking dispatcher, not the underlying USB transfer itself.
+- **Engineering implication:** the Mbox 2 transport needs separate isochronous input/output paths, queued frame lists/buffers, asynchronous completion handling, controller-frame scheduling where supported, and explicit feedback/packet-capacity handling. The old kernel API is not assumed to be directly available in modern user space.
+- **Apple Silicon Eleven Rack check:** source uses IOUSBLib asynchronous isochronous reads/writes and a version-7 shared ring. Capture uses an SPSC FIFO; playback is time-addressed using Core Audio output sample time. This is a key AudioServerPlugIn lesson: a simple append-only playback FIFO may fail under multi-client WriteMix scheduling. Its engine's USBDeviceOpenSeize() fallback remains prohibited for Mbox 2 and must not be copied.
+- **Apple Silicon Eleven Rack discussion check:** issues #1 and #2 still have no comments or maintainer replies; no public PR was found. The playback-dropout analysis document's status line appears stale relative to the current source's time-addressed playback ring; treat this as a documentation inconsistency pending upstream confirmation.
+- **Linux Eleven Rack check:** PR #1 (implicit-feedback packet capacity) and PR #2 (Tauri editor) are merged, with no PR comments or review submissions. The Linux project documents device-specific descriptor bounds, playback packet normalization, a 2 ms playback lead and delayed USB completion/giveback investigations. Its current latest visible activity is editor/manual work and a 0.1.2 release candidate, not a new audio transport result.
+- **Important separation:** Eleven Rack's USB ID is 0dba:b011, not Mbox 2's 0dba:3000. Do not copy its endpoint numbers, channel arithmetic, feedback assumptions, packet ceilings or playback lead. Transfer only general engineering lessons and validate against Mbox 2 evidence.
+- **Not attempted:** no vendor-specific/state-changing USB request, SET_CONFIGURATION, SET_INTERFACE, pipe submission, endpoint transfer, audio stream, firmware initialisation or LED test.
+- Full evidence and links: [23 November session record](session-record-2026-11-23.md) and [legacy audio transport analysis](../research/legacy-audio-transport-2026-11-23.md).
 
 ## Non-negotiable security boundary
 
@@ -72,18 +96,18 @@ The protocol core must remain independent of the USB transport. The Mavericks dr
 
 ## Next development stages
 
-### Stage 1 — Device initialisation and LED milestone
+### Stage 1 — First bidirectional USB communication and device initialisation (LED milestone)
 
 This is the immediate next milestone. Discovery, Audio MIDI Setup visibility, descriptor reading and ordinary interface-6 attachment are already demonstrated; do not repeat them.
 
-- Continue static analysis of the Mavericks driver and Linux Mbox 2 startup path.
+- Continue only the specific static analysis needed to reconcile the Mavericks and Linux startup paths, including the unresolved five-stage `DigiHandshake::Do` helpers.
 - Reconcile the different handshake/status requests, their parameters, order, expected responses and retry behaviour.
 - Identify the complete initialisation sequence required to bring the Mbox 2 into its operational state.
 - Document each request and the evidence supporting it.
 - Do not send a firmware/vendor-specific or state-changing request until the sequence is reconciled, the exact test is justified, and the user explicitly approves it.
 - Success criterion: the device initialises and all expected Mbox 2 LEDs illuminate, with no forced interface capture or security reduction.
 
-### Stage 2 — Core Audio input/output
+### Stage 2 — Core Audio input/output (after the LED milestone)
 
 After device initialisation is demonstrated:
 
@@ -160,3 +184,20 @@ The exact request, returned bytes, parsing, and safety boundaries are recorded i
 - **Next:** Resume at Stage 1 above: reconcile and document the device initialisation sequence required for the all-LEDs-on milestone. Do not restart USB enumeration, Audio MIDI Setup visibility, descriptor reading or interface-6 attachment.
 
 See [Implementation foundation — 21 November 2026](implementation-foundation-2026-11-21.md) for the concise session handover.
+
+
+### 22 November 2026 — user-space architecture reaffirmed and startup evidence updated
+
+- **Decision reaffirmed:** The Eleven Rack-style user-space approach is the sole active architecture: ordinary user-space USB communication, a transport-independent Mbox 2 protocol core, a Core Audio integration component, and shared-memory audio transport where appropriate.
+- **Parked:** DriverKit is not to be developed, investigated further, or treated as a fallback unless the project owner explicitly reopens the decision.
+- **Primary external architecture reference:** [Matt Housley's Eleven Rack Driver](https://github.com/Matt-Housley/eleven-rack-driver) is the relevant Apple Silicon macOS implementation (arm64, macOS 13+), not the Linux ALSA project. Its README and source describe a user-space USB engine (`erengine`), a Core Audio `AudioServerPlugIn` loaded by `coreaudiod`, a shared-memory audio ring, and a menu-bar supervisor. The engine uses IOUSBLib device/interface objects, opens streaming interfaces, selects alternate settings, discovers isochronous pipes, and schedules asynchronous isochronous transfers. This is the primary architecture and implementation reference for our macOS work.
+- **Important difference / constraint:** The Eleven Rack engine attempts `USBDeviceOpen()` and falls back to `USBDeviceOpenSeize()` on exclusive-access failure. Our Mbox 2 project has an explicit no-forced-takeover/no-seize constraint, so that fallback must not be copied. Our already-proven interface-6 attachment uses the ordinary `IOUSBHostInterface` user-space API; we must choose and validate the correct Mbox 2-compatible interface/transfer path without taking ownership of unrelated interfaces or seizing the device.
+- **Eleven Rack repository discussion checked:** There are two open issues and no pull requests in the reviewed repository. Issue #2 is the USBDeviceOpenSeize/SIP/signing question we raised; it has no maintainer reply. Issue #1 reports a device disconnect/endpoint 0x83 transaction-error recovery problem; it also has no comments. Do not treat either issue as resolved by maintainer guidance.
+- The Linux [Elevenrack-driver-linux](https://github.com/kdbo/Elevenrack-driver-linux) project remains a secondary protocol/USB-audio reference only; its ALSA implementation is not our target architecture.
+- **Confirmed from existing Mavericks disassembly notes:** `FirmwareHandshake(false)` uses request `0xC0/0x85`, `wValue=1`, `wIndex=1`, `wLength=1`; response byte `0x01` triggers a 300 ms retry delay, up to 30 retries after the initial request.
+- **Confirmed from existing disassembly notes:** The relevant `initHardware()` branch attempts interface rematching for interface numbers 0 and 6, performs the one-byte handshake, and then calls the concrete `RayDevice::CreateAudioEngines()` override on the successful path. Static analysis does not establish the runtime outcome of those rematches.
+- **Confirmed distinction:** The Linux boot quirk's 18-byte `0xC0/0x85` exchange (`wIndex=0`) is not interchangeable with the Mavericks one-byte request.
+- **Open:** The separate five-stage `DigiHandshake::Do` routine remains unmapped. The planned short grep review was not completed in this session.
+- **Not attempted:** No vendor-specific or state-changing USB request, endpoint transfer, configuration/alternate-setting change, firmware initialisation or LED test was performed.
+- **Immediate milestone:** First justified and explicitly approved bidirectional USB communication sufficient to initialise the Mbox 2 and illuminate its expected LEDs.
+- **Following milestone:** Working Core Audio playback and capture, followed by LUNA validation.

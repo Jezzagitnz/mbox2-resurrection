@@ -72,6 +72,7 @@ A build or local experiment is not automatically safe to install. Signing, notar
 - [Modern macOS USB audio observations](research/modern-macos-usb-audio-observations-2026-11-12.md) — read-only interface, Core Audio and system-log findings.
 - [18 November hardware detection session](research/hardware-detection-session-2026-11-18.md) — application detection result, unchanged hardware indicators and pending USB-B to USB-C cable test.
 - [19 November interface 6 endpoint discovery](research/modern-macos-interface-6-endpoint-discovery-2026-11-19.md) — read-only IOUSBLib endpoint-descriptor query; no interface open or endpoint transfers.
+- [Modern macOS IOUSBLib isochronous API compatibility](research/modern-macos-iousblib-isochronous-api-2026-11-23.md) — SDK declaration review of standard and low-latency asynchronous isochronous APIs; no hardware transfer.
 - [Firmware handshake investigation](research/firmware-handshake.md) — identified handshake routines and unanswered questions.
 - [Sample-rate, clock and USB stream control](research/sample-rate-clock-control.md) — 44.1/48 kHz selection, USB endpoint requests, external-rate tracking, alternate settings and AC-3 topology.
 - [Historical DriverKit architecture research](research/driverkit-architecture.md) — retained for protocol and platform reference only; not an implementation route.
