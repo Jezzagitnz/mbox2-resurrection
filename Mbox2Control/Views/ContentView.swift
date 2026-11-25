@@ -24,10 +24,8 @@ struct ContentView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-
                     hardwarePanel
 
                     HStack(alignment: .top, spacing: 16) {
@@ -41,7 +39,6 @@ struct ContentView: View {
             }
 
             Divider()
-
             footer
         }
         .frame(minWidth: 720, minHeight: 580)
@@ -52,14 +49,12 @@ struct ContentView: View {
 
     private var hardwarePanel: some View {
         VStack(alignment: .leading, spacing: 16) {
-
             sectionHeading(
                 "Hardware",
                 subtitle: "Connected audio interface"
             )
 
             HStack(spacing: 18) {
-
                 Group {
                     if let image = mboxImage {
                         Image(nsImage: image)
@@ -76,7 +71,6 @@ struct ContentView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 10))
 
                 VStack(alignment: .leading, spacing: 7) {
-
                     Text(device.identity.name)
                         .font(.title3.weight(.semibold))
 
@@ -88,7 +82,6 @@ struct ContentView: View {
                 Spacer()
 
                 VStack(alignment: .trailing, spacing: 8) {
-
                     statusIndicator(
                         title: "Connection",
                         state: device.connectionState.rawValue,
@@ -96,7 +89,7 @@ struct ContentView: View {
                     )
 
                     statusIndicator(
-                        title: "USB Communication",
+                        title: "USB Interface",
                         state: device.usbState.rawValue,
                         color: usbColor
                     )
@@ -108,6 +101,24 @@ struct ContentView: View {
                     )
                 }
             }
+
+            Divider()
+
+            HStack {
+                Button {
+                    device.checkUSBConnection()
+                } label: {
+                    Label("Check USB Connection", systemImage: "cable.connector")
+                }
+
+                Spacer()
+            }
+
+            Text(device.usbCheckMessage)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .textSelection(.enabled)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(18)
         .background(panelBackground)
@@ -117,7 +128,6 @@ struct ContentView: View {
 
     private var audioPanel: some View {
         VStack(alignment: .leading, spacing: 18) {
-
             sectionHeading(
                 "Audio Configuration",
                 subtitle: "Hardware operating format"
@@ -153,7 +163,6 @@ struct ContentView: View {
 
     private var clockPanel: some View {
         VStack(alignment: .leading, spacing: 18) {
-
             sectionHeading(
                 "Clock Source",
                 subtitle: "Digital synchronisation"
@@ -170,12 +179,10 @@ struct ContentView: View {
             Divider()
 
             VStack(alignment: .leading, spacing: 12) {
-
                 Text("S/PDIF Lock")
                     .font(.subheadline.weight(.medium))
 
                 HStack(spacing: 9) {
-
                     Circle()
                         .fill(spdifColor)
                         .frame(width: 10, height: 10)
@@ -205,7 +212,6 @@ struct ContentView: View {
 
     private var diagnosticsPanel: some View {
         VStack(alignment: .leading, spacing: 14) {
-
             sectionHeading(
                 "Device Diagnostics",
                 subtitle: "Hardware and driver information"
@@ -244,7 +250,7 @@ struct ContentView: View {
 
     private var usbColor: Color {
         switch device.usbState {
-        case .communicating:
+        case .interfaceInitialised, .communicating:
             return .green
         case .notCommunicating:
             return .orange
@@ -286,7 +292,6 @@ struct ContentView: View {
         subtitle: String
     ) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-
             Text(title)
                 .font(.headline)
 
@@ -302,13 +307,11 @@ struct ContentView: View {
         color: Color
     ) -> some View {
         VStack(alignment: .trailing, spacing: 4) {
-
             Text(title)
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
             HStack(spacing: 6) {
-
                 Circle()
                     .fill(color)
                     .frame(width: 7, height: 7)
@@ -324,7 +327,6 @@ struct ContentView: View {
         value: String
     ) -> some View {
         HStack {
-
             Text(title)
                 .foregroundStyle(.secondary)
 
@@ -340,7 +342,6 @@ struct ContentView: View {
 
     private var footer: some View {
         HStack {
-
             Spacer()
 
             Text("Development Build · 0.1")

@@ -1,15 +1,11 @@
 import Foundation
 import Observation
 
-// MARK: - Device Identity
-
 struct Mbox2Identity {
     let name = "Digidesign Mbox 2"
     let usbVendorID: UInt16 = 0x0DBA
     let usbProductID: UInt16 = 0x3000
 }
-
-// MARK: - Connection State
 
 enum Mbox2ConnectionState: String {
     case notDetected = "Not detected"
@@ -17,15 +13,12 @@ enum Mbox2ConnectionState: String {
     case unavailable = "Unavailable"
 }
 
-// MARK: - USB Communication
-
 enum Mbox2USBState: String {
     case unknown = "Not checked"
+    case interfaceInitialised = "Interface 6 initialised"
     case communicating = "Communicating"
     case notCommunicating = "Not communicating"
 }
-
-// MARK: - Driver State
 
 enum Mbox2DriverState: String {
     case notInstalled = "Not installed"
@@ -34,8 +27,6 @@ enum Mbox2DriverState: String {
     case unknown = "Unknown"
 }
 
-// MARK: - S/PDIF Lock
-
 enum Mbox2SPDIFState: String {
     case unknown = "Unknown"
     case locked = "Locked"
@@ -43,15 +34,11 @@ enum Mbox2SPDIFState: String {
     case unavailable = "Unavailable"
 }
 
-// MARK: - Firmware State
-
 enum Mbox2FirmwareState: String {
     case notQueried = "Not queried"
     case available = "Available"
     case unavailable = "Unavailable"
 }
-
-// MARK: - Audio Configuration
 
 enum Mbox2SampleRate: String, CaseIterable {
     case rate44100 = "44.1 kHz"
@@ -68,36 +55,46 @@ enum Mbox2ClockSource: String, CaseIterable {
     case spdif = "S/PDIF"
 }
 
-// MARK: - Device Model
-
 @Observable
 @MainActor
 final class Mbox2Device {
 
-    // Identity
     let identity = Mbox2Identity()
+    private let usbService = Mbox2USBService()
 
-    // Physical connection
     var connectionState: Mbox2ConnectionState = .notDetected
 
-    // USB communication
     var usbState: Mbox2USBState = .unknown
+    var usbCheckMessage = "USB check has not been run."
 
-    // Driver
     var driverState: Mbox2DriverState = .notInstalled
 
-    // Digital synchronisation
     var spdifState: Mbox2SPDIFState = .unknown
 
-    // Firmware
     var firmwareState: Mbox2FirmwareState = .notQueried
     var firmwareVersion: String?
 
-    // User-selected configuration.
-    // These values are not confirmation of hardware settings.
     var selectedSampleRate: Mbox2SampleRate = .rate44100
     var selectedBitDepth: Mbox2BitDepth = .bit24
     var selectedClockSource: Mbox2ClockSource = .internalClock
 
     init() {}
+
+    func checkUSBConnection() {
+        connectionState = .unavailable
+        usbState = .unknown
+        usbCheckMessage = "Checking for Mbox 2 interface 6..."
+
+        do {
+            _ = try usbService.initialiseInterface6()
+
+            connectionState = .detected
+            usbState = .interfaceInitialised
+            usbCheckMessage = "Mbox 2 interface 6 was successfully initialised."
+        } catch {
+            connectionState = .unavailable
+            usbState = .notCommunicating
+            usbCheckMessage = error.localizedDescription
+        }
+    }
 }
