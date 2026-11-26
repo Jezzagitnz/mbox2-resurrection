@@ -70,6 +70,7 @@ A build or local experiment is not automatically safe to install. Signing, notar
 
 ### Research notes
 
+- [26 November reverse-engineering progress](research/reverse-engineering-progress-2026-11-26.md) — recovered legacy stream-interface tables, alternate-setting logic, engine initialisation and creation of the four audio interface services.
 - [Mavericks driver research](research/mavericks-driver.md) — known-working driver components, symbols and disassembly findings.
 - [Driver architecture](research/driver-architecture.md) — an initial map of the original driver's components and unanswered relationships.
 - [Apple Silicon research](research/apple-silicon.md) — modern target system, USB descriptor access and interface findings.
